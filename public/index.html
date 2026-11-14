@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pool Shield: check a Solana token before you add liquidity</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--tile:#F2F9F8;--deep:#0A3D62;--aqua:#1496A6;--ok:#2E9E6B;--warn:#E9A23B;--bad:#D9482B;--unk:#8A9BA8;--line:#CFE5E3}
+*{box-sizing:border-box}
+body{margin:0;background:var(--tile);color:var(--deep);font-family:"Familjen Grotesk",system-ui,sans-serif;line-height:1.5}
+main{max-width:680px;margin:0 auto;padding:40px 20px 56px}
+h1{font-size:2.4rem;line-height:1.1;margin:0 0 8px;letter-spacing:-.02em}
+.lead{margin:0 0 28px;font-size:1.1rem;max-width:46ch}
+form{display:flex;gap:8px;flex-wrap:wrap}
+input{flex:1 1 280px;padding:14px;border:2px solid var(--deep);border-radius:6px;font:inherit;font-family:ui-monospace,Consolas,monospace;font-size:.9rem;background:#fff;color:var(--deep)}
+button{padding:14px 22px;border:0;border-radius:6px;background:var(--deep);color:#fff;font:inherit;font-weight:700;cursor:pointer}
+button:hover{background:var(--aqua)}
+:focus-visible{outline:3px solid var(--aqua);outline-offset:2px}
+#out{margin-top:32px}
+.strip{display:flex;gap:4px;padding:6px;background:#fff;border:2px solid var(--deep);border-radius:6px;max-width:420px}
+.pad{flex:1;height:34px;border-radius:3px}
+.ok{background:var(--ok)}.warn{background:var(--warn)}.bad{background:var(--bad)}.unknown{background:var(--unk)}
+h2{font-size:1.9rem;margin:18px 0 2px}
+.tok{margin:0 0 4px;font-weight:600}
+.meta{margin:0 0 20px;color:#3d6580}
+.meta a{color:var(--aqua)}
+ul{list-style:none;padding:0;margin:0}
+li{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+li i{flex:none;width:6px;border-radius:3px}
+li b{display:block}
+li span{color:#3d6580}
+.err{color:var(--bad);font-weight:600}.muted{color:#3d6580}
+footer{margin-top:40px;font-size:.85rem;color:#3d6580;max-width:60ch}
+@media (prefers-reduced-motion:no-preference){.pad{animation:fill .5s ease backwards}.pad:nth-child(2){animation-delay:.08s}.pad:nth-child(3){animation-delay:.16s}.pad:nth-child(4){animation-delay:.24s}.pad:nth-child(5){animation-delay:.32s}.pad:nth-child(6){animation-delay:.4s}.pad:nth-child(7){animation-delay:.48s}.pad:nth-child(8){animation-delay:.56s}@keyframes fill{from{opacity:0;transform:scaleY(.3)}}}
+</style>
+</head>
+<body>
+<main>
+<h1>Pool Shield</h1>
+<p class="lead">Paste a Solana token address. See the risks before you put money in its liquidity pool.</p>
+<form id="f">
+<input id="mint" placeholder="Token address" autocomplete="off" spellcheck="false" aria-label="Solana token address">
+<button type="submit">Scan token</button>
+</form>
+<div id="out" aria-live="polite"></div>
+<footer>Reads public Solana data and Dexscreener. A lower score means fewer red flags, not a safe investment. Not financial advice. Independent student project by Rudy (NuesPoll), LAUTECH, not affiliated with Degxifi.</footer>
+</main>
+<script>
+const $=s=>document.querySelector(s), out=$("#out");
+function el(tag,text,cls){const n=document.createElement(tag);if(text!=null)n.textContent=text;if(cls)n.className=cls;return n}
+function money(n){return n==null?"n/a":"$"+Math.round(n).toLocaleString()}
+function render(d){
+  const strip=el("div",null,"strip");
+  d.checks.forEach(c=>{const p=el("div",null,"pad "+c.status);p.title=c.label;strip.append(p)});
+  const meta=el("p",null,"meta");
+  if(d.pair){
+    meta.append(document.createTextNode(d.pair.dex+" | liquidity "+money(d.pair.liquidityUsd)+" | 24h volume "+money(d.pair.volume24h)+" "));
+    if(d.pair.url&&d.pair.url.startsWith("https://dexscreener.com/")){const a=el("a","View on Dexscreener");a.href=d.pair.url;a.target="_blank";a.rel="noopener noreferrer";meta.append(a)}
+  }
+  const list=el("ul");
+  d.checks.forEach(c=>{const li=el("li");li.append(el("i",null,c.status));const t=el("div");t.append(el("b",c.label),el("span",c.detail));li.append(t);list.append(li)});
+  out.replaceChildren(strip,el("h2",d.verdict+" ("+d.score+"/100 risk)"),el("p",d.token?d.token.name+" ("+d.token.symbol+")":"Unknown token","tok"),meta,list);
+}
+async function run(mint){
+  out.replaceChildren(el("p","Scanning...","muted"));
+  try{const r=await fetch("/api/scan?mint="+encodeURIComponent(mint));const d=await r.json();if(!r.ok)throw new Error(d.error||"Scan failed");render(d)}
+  catch(e){out.replaceChildren(el("p",e.message,"err"))}
+}
+$("#f").addEventListener("submit",e=>{e.preventDefault();const m=$("#mint").value.trim();if(m){history.replaceState(null,"","?mint="+encodeURIComponent(m));run(m)}});
+const q=new URLSearchParams(location.search).get("mint");if(q){$("#mint").value=q;run(q)}
+</script>
+</body>
+</html>
