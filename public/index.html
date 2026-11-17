@@ -10,7 +10,10 @@
 :root{--tile:#F2F9F8;--deep:#0A3D62;--aqua:#1496A6;--ok:#2E9E6B;--warn:#E9A23B;--bad:#D9482B;--unk:#8A9BA8;--line:#CFE5E3}
 *{box-sizing:border-box}
 body{margin:0;background:var(--tile);color:var(--deep);font-family:"Familjen Grotesk",system-ui,sans-serif;line-height:1.5}
-main{max-width:680px;margin:0 auto;padding:40px 20px 56px}
+main{max-width:680px;margin:0 auto;padding:28px 20px 56px}
+.top{display:flex;justify-content:flex-end;gap:6px;margin-bottom:12px}
+.top button{padding:6px 12px;background:#fff;color:var(--deep);border:2px solid var(--deep);font-size:.85rem}
+.top button[aria-pressed=true]{background:var(--deep);color:#fff}
 h1{font-size:2.4rem;line-height:1.1;margin:0 0 8px;letter-spacing:-.02em}
 .lead{margin:0 0 28px;font-size:1.1rem;max-width:46ch}
 form{display:flex;gap:8px;flex-wrap:wrap}
@@ -21,16 +24,20 @@ button:hover{background:var(--aqua)}
 #out{margin-top:32px}
 .strip{display:flex;gap:4px;padding:6px;background:#fff;border:2px solid var(--deep);border-radius:6px;max-width:420px}
 .pad{flex:1;height:34px;border-radius:3px}
-.ok{background:var(--ok)}.warn{background:var(--warn)}.bad{background:var(--bad)}.unknown{background:var(--unk)}
+.ok{background:var(--ok)}.warn{background:var(--warn)}.bad{background:var(--bad)}.unknown{background:var(--unk)}.info{background:var(--aqua)}
 h2{font-size:1.9rem;margin:18px 0 2px}
 .tok{margin:0 0 4px;font-weight:600}
-.meta{margin:0 0 20px;color:#3d6580}
+.meta{margin:0 0 8px;color:#3d6580}
 .meta a{color:var(--aqua)}
-ul{list-style:none;padding:0;margin:0}
-li{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
-li i{flex:none;width:6px;border-radius:3px}
-li b{display:block}
-li span{color:#3d6580}
+.tip{margin:0 0 12px;font-size:.9rem;color:#3d6580}
+.row{display:flex;gap:12px;padding:0;border-top:1px solid var(--line)}
+.row i{flex:none;width:6px;border-radius:3px;margin:12px 0}
+details{flex:1;padding:12px 0}
+summary{cursor:pointer;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary b{display:block}
+summary span{color:#3d6580}
+details p{margin:8px 0 0;padding:10px 12px;background:#fff;border-radius:6px;font-size:.95rem}
 .err{color:var(--bad);font-weight:600}.muted{color:#3d6580}
 footer{margin-top:40px;font-size:.85rem;color:#3d6580;max-width:60ch}
 @media (prefers-reduced-motion:no-preference){.pad{animation:fill .5s ease backwards}.pad:nth-child(2){animation-delay:.08s}.pad:nth-child(3){animation-delay:.16s}.pad:nth-child(4){animation-delay:.24s}.pad:nth-child(5){animation-delay:.32s}.pad:nth-child(6){animation-delay:.4s}.pad:nth-child(7){animation-delay:.48s}.pad:nth-child(8){animation-delay:.56s}@keyframes fill{from{opacity:0;transform:scaleY(.3)}}}
@@ -38,37 +45,63 @@ footer{margin-top:40px;font-size:.85rem;color:#3d6580;max-width:60ch}
 </head>
 <body>
 <main>
+<div class="top" role="group" aria-label="Language"><button id="en" type="button">English</button><button id="pcm" type="button">Pidgin</button></div>
 <h1>Pool Shield</h1>
-<p class="lead">Paste a Solana token address. See the risks before you put money in its liquidity pool.</p>
+<p class="lead" id="lead"></p>
 <form id="f">
-<input id="mint" placeholder="Token address" autocomplete="off" spellcheck="false" aria-label="Solana token address">
-<button type="submit">Scan token</button>
+<input id="mint" autocomplete="off" spellcheck="false" aria-label="Solana token address">
+<button type="submit" id="go"></button>
 </form>
 <div id="out" aria-live="polite"></div>
-<footer>Reads public Solana data and Dexscreener. A lower score means fewer red flags, not a safe investment. Not financial advice. Independent student project by Rudy (NuesPoll), LAUTECH, not affiliated with Degxifi.</footer>
+<footer id="foot"></footer>
 </main>
+<script defer src="/_vercel/insights/script.js"></script>
 <script>
+const UI={
+ en:{lead:"Paste a Solana token address. See the risks before you put money in its liquidity pool.",ph:"Token address",go:"Scan token",busy:"Scanning...",risk:"risk",tip:"Tap any row to see why it matters.",dex:"View on Dexscreener",liq:"liquidity",vol:"24h volume",unk:"Unknown token",
+  foot:"Reads public Solana data and Dexscreener. A lower score means fewer red flags, not a safe investment. Not financial advice. Independent project by Rudy, cybersecurity student at LAUTECH, built for the Degxifi community."},
+ pcm:{lead:"Paste Solana token address. Check the risk before you put your money for the liquidity pool.",ph:"Token address",go:"Check am",busy:"E dey check...",risk:"risk",tip:"Tap any row make you see why e matter.",dex:"See am for Dexscreener",liq:"liquidity",vol:"24h volume",unk:"Token wey we no know",
+  foot:"We dey read public Solana data and Dexscreener. Small score mean small red flags, e no mean say the investment safe. No be financial advice. Rudy, cybersecurity student for LAUTECH, build am as independent project for the Degxifi community."}
+};
 const $=s=>document.querySelector(s), out=$("#out");
+let lang="en", last=null;
+try{lang=localStorage.getItem("lang")==="pcm"?"pcm":"en"}catch(e){}
 function el(tag,text,cls){const n=document.createElement(tag);if(text!=null)n.textContent=text;if(cls)n.className=cls;return n}
 function money(n){return n==null?"n/a":"$"+Math.round(n).toLocaleString()}
+function chrome(){
+  const u=UI[lang];
+  $("#lead").textContent=u.lead;$("#mint").placeholder=u.ph;$("#go").textContent=u.go;$("#foot").textContent=u.foot;
+  document.documentElement.lang=lang==="pcm"?"en":"en";
+  $("#en").setAttribute("aria-pressed",lang==="en");$("#pcm").setAttribute("aria-pressed",lang==="pcm");
+}
 function render(d){
+  const u=UI[lang],p=lang==="pcm";
   const strip=el("div",null,"strip");
-  d.checks.forEach(c=>{const p=el("div",null,"pad "+c.status);p.title=c.label;strip.append(p)});
+  d.checks.forEach(c=>{const x=el("div",null,"pad "+c.status);x.title=p?c.labelPcm:c.label;strip.append(x)});
   const meta=el("p",null,"meta");
   if(d.pair){
-    meta.append(document.createTextNode(d.pair.dex+" | liquidity "+money(d.pair.liquidityUsd)+" | 24h volume "+money(d.pair.volume24h)+" "));
-    if(d.pair.url&&d.pair.url.startsWith("https://dexscreener.com/")){const a=el("a","View on Dexscreener");a.href=d.pair.url;a.target="_blank";a.rel="noopener noreferrer";meta.append(a)}
+    meta.append(document.createTextNode(d.pair.dex+" | "+u.liq+" "+money(d.pair.liquidityUsd)+" | "+u.vol+" "+money(d.pair.volume24h)+" "));
+    if(d.pair.url&&d.pair.url.startsWith("https://dexscreener.com/")){const a=el("a",u.dex);a.href=d.pair.url;a.target="_blank";a.rel="noopener noreferrer";meta.append(a)}
   }
-  const list=el("ul");
-  d.checks.forEach(c=>{const li=el("li");li.append(el("i",null,c.status));const t=el("div");t.append(el("b",c.label),el("span",c.detail));li.append(t);list.append(li)});
-  out.replaceChildren(strip,el("h2",d.verdict+" ("+d.score+"/100 risk)"),el("p",d.token?d.token.name+" ("+d.token.symbol+")":"Unknown token","tok"),meta,list);
+  const list=el("div");
+  d.checks.forEach(c=>{
+    const row=el("div",null,"row");row.append(el("i",null,c.status));
+    const det=el("details"),sum=el("summary");
+    sum.append(el("b",p?c.labelPcm:c.label),el("span",p?c.detailPcm:c.detail));
+    det.append(sum,el("p",p?c.whyPcm:c.why));row.append(det);list.append(row);
+  });
+  const head=(p?d.verdictPcm:d.verdict)+(d.score==null?"":" ("+d.score+"/100 "+u.risk+")");
+  out.replaceChildren(strip,el("h2",head),el("p",d.token?d.token.name+" ("+d.token.symbol+")":u.unk,"tok"),meta,el("p",u.tip,"tip"),list);
 }
 async function run(mint){
-  out.replaceChildren(el("p","Scanning...","muted"));
-  try{const r=await fetch("/api/scan?mint="+encodeURIComponent(mint));const d=await r.json();if(!r.ok)throw new Error(d.error||"Scan failed");render(d)}
-  catch(e){out.replaceChildren(el("p",e.message,"err"))}
+  out.replaceChildren(el("p",UI[lang].busy,"muted"));
+  try{const r=await fetch("/api/scan?mint="+encodeURIComponent(mint));const d=await r.json();if(!r.ok)throw new Error(d.error||"Scan failed");last=d;render(d)}
+  catch(e){last=null;out.replaceChildren(el("p",e.message,"err"))}
 }
+function setLang(l){lang=l;try{localStorage.setItem("lang",l)}catch(e){}chrome();if(last)render(last)}
+$("#en").addEventListener("click",()=>setLang("en"));$("#pcm").addEventListener("click",()=>setLang("pcm"));
 $("#f").addEventListener("submit",e=>{e.preventDefault();const m=$("#mint").value.trim();if(m){history.replaceState(null,"","?mint="+encodeURIComponent(m));run(m)}});
+chrome();
 const q=new URLSearchParams(location.search).get("mint");if(q){$("#mint").value=q;run(q)}
 </script>
 </body>
