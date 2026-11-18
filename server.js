@@ -11,7 +11,8 @@ http.createServer((req, res) => {
     res.json = (o) => { res.setHeader("content-type", "application/json"); res.end(JSON.stringify(o)); };
     return handler(req, res);
   }
-  const f = path.join(root, u.pathname === "/" ? "index.html" : u.pathname);
+  let f = path.join(root, u.pathname === "/" ? "index.html" : u.pathname);
+  if (!fs.existsSync(f) && fs.existsSync(f + ".html")) f += ".html";
   if (!f.startsWith(root) || !fs.existsSync(f)) { res.statusCode = 404; return res.end("Not found"); }
   res.setHeader("content-type", types[path.extname(f)] || "text/plain");
   fs.createReadStream(f).pipe(res);

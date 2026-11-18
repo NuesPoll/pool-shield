@@ -17,3 +17,8 @@ Push this folder to GitHub, import it on vercel.com, add RPC_URL as an environme
 
 ## v1 limits
 Liquidity lock is not verified yet. That is the first thing to add in v2.
+
+## Tests
+    node tests/unit.js          offline checks, run before every upload
+    node tests/live.js --save   save a baseline from the real chain (needs RPC_URL)
+    node tests/live.js          compare today's results with the baseline

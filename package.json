@@ -1,1 +1,12 @@
-{ "name": "pool-shield", "version": "0.1.0", "scripts": { "start": "node server.js" }, "engines": { "node": ">=18" } }
+{
+  "name": "pool-shield",
+  "version": "0.1.0",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node tests/unit.js",
+    "test:live": "node tests/live.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
