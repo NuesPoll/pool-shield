@@ -1,6 +1,7 @@
 // Offline tests with a mocked network. Run: node tests/unit.js
 const assert = require("assert"), crypto = require("crypto");
-const { scan, _onCurve } = require("../lib/scan");
+const { scan, _onCurve, _clearCache } = require("../lib/scan");
+let RPC_CALLS = 0;
 const MINT = "DHTSie9phDCpRZYV229bNk8b9hvs9PUZT4nW47Kyjupx";
 const SYS = "11111111111111111111111111111111";
 const PDA = "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM";
@@ -14,10 +15,12 @@ const pair = (o = {}) => ({ chainId: "solana", dexId: o.dex || "raydium", baseTo
 const small = () => [2, 1.5, 1, 1, 0.5].map((pct) => ({ pct, owner: wallet() }));
 
 function mock(s) {
+  _clearCache(); RPC_CALLS = 0;
   global.fetch = async (url, opt) => {
     const ok = (b) => ({ ok: true, status: 200, json: async () => b });
+    if (String(url).includes("rugcheck")) return s.rug === undefined ? { ok: false, status: 500, json: async () => ({}) } : { ok: true, status: 200, json: async () => s.rug };
     if (String(url).includes("dexscreener")) return ok({ pairs: s.pairs === undefined ? [pair()] : s.pairs });
-    const { method, params } = JSON.parse(opt.body);
+    const { method, params } = JSON.parse(opt.body); RPC_CALLS++;
     if (method === "getAccountInfo") return ok({ result: { value: { data: { program: "spl-token", parsed: { type: s.notMint ? "account" : "mint", info: Object.assign({ decimals: 6, supply: "1000000000000000", mintAuthority: null, freezeAuthority: null }, s.mint) } } } } });
     if (method === "getTokenLargestAccounts") {
       if (s.holdersFail) return { ok: false, status: 500, json: async () => ({}) };
@@ -91,6 +94,33 @@ async function t(name, fn) { try { await fn(); pass++; console.log("PASS", name)
   await t("wallet vs program address detection", async () => {
     for (let i = 0; i < 40; i++) assert.ok(_onCurve(wallet()), "wallet misread as program");
     assert.ok(!_onCurve(PDA)); assert.ok(!_onCurve("5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1"));
+  });
+  await t("chain checks are cached but market data stays live", async () => {
+    mock({ holders: small() }); await scan(MINT); const first = RPC_CALLS;
+    await scan(MINT); assert.strictEqual(RPC_CALLS, first, "second scan hit the chain again");
+    await scan(MINT, { fresh: true }); assert.ok(RPC_CALLS > first, "fresh did not bypass the cache");
+  });
+  await t("failed holder lookups are not cached", async () => {
+    mock({ holders: [], holdersFail: true }); await scan(MINT); const first = RPC_CALLS; await scan(MINT);
+    assert.ok(RPC_CALLS > first);
+  });
+  await t("fully locked liquidity reads ok", async () => { mock({ holders: small(), rug: { lpLockedPct: 100 } }); const r = await scan(MINT); assert.strictEqual(get(r, "lock").status, "ok"); });
+  await t("unlocked LP on a young pool is flagged", async () => {
+    mock({ holders: small(), rug: { lpLockedPct: 0 }, pairs: [pair({ ageDays: 3 })] }); const r = await scan(MINT);
+    assert.strictEqual(get(r, "lock").status, "bad");
+  });
+  await t("unlocked LP on an old pool is only a warning", async () => {
+    mock({ holders: small(), rug: { lpLockedPct: 0 }, pairs: [pair({ ageDays: 200 })] }); const r = await scan(MINT);
+    assert.strictEqual(get(r, "lock").status, "warn");
+  });
+  await t("lock lookup failure stays unknown", async () => { mock({ holders: small() }); const r = await scan(MINT); assert.strictEqual(get(r, "lock").status, "unknown"); });
+  await t("bonding curve skips the lock check", async () => {
+    mock({ holders: small(), rug: { lpLockedPct: 0 }, pairs: [pair({ dex: "meteoradbc", liq: 0 })] }); const r = await scan(MINT);
+    assert.strictEqual(get(r, "lock").status, "unknown");
+  });
+  await t("response carries price and timing for the live view", async () => {
+    mock({ holders: small() }); const r = await scan(MINT);
+    assert.ok(r.pair.priceUsd !== undefined && r.scannedAt && r.chainAgeSec >= 0);
   });
   console.log("\n" + pass + " passed, " + fail + " failed"); process.exit(fail ? 1 : 0);
 })();

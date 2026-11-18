@@ -23,7 +23,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   let bad = 0;
   for (const t of SEED) {
     try {
-      const r = await scan(t.mint);
+      const r = await scan(t.mint, { fresh: true, quiet: true });
       const st = Object.fromEntries(r.checks.map((c) => [c.id, c.status]));
       out[t.name] = { verdict: r.verdict, score: r.score, status: st };
       const problems = [];

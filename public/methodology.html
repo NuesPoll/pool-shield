@@ -29,12 +29,13 @@ small,.mute{color:var(--mute)}
 <main>
 <p><a href="/">Back to Pool Shield</a></p>
 <h1>How Pool Shield works</h1>
-<p class="lead">Pool Shield reads public Solana data and shows the warning signs a liquidity provider should understand before adding money to a pool. It is a learning tool, not a verdict. Version 2.1.</p>
+<p class="lead">Pool Shield reads public Solana data and shows the warning signs a liquidity provider should understand before adding money to a pool. It is a learning tool, not a verdict. Version 2.2.</p>
 
 <h2>Where the data comes from</h2>
 <ul>
 <li><b>Solana RPC</b> (a public blockchain node): token settings, and the largest holders.</li>
-<li><b>Dexscreener</b>: the trading pool, its liquidity, 24-hour volume, age and market cap.</li>
+<li><b>Dexscreener</b>: the trading pool, its price, liquidity, 24-hour volume, age and market cap.</li>
+<li><b>RugCheck</b>: how much of the pool's LP tokens are locked or burned.</li>
 </ul>
 <p>Nothing is stored about the people who use the tool beyond anonymous visit counts and the token address that was scanned.</p>
 
@@ -52,7 +53,7 @@ small,.mute{color:var(--mute)}
 <tr><td>Pool age</td><td>How long the pool has existed.</td><td>20 under 24 hours, 10 under 7 days</td></tr>
 <tr><td>Liquidity vs value</td><td>Pool liquidity compared with the token's market cap.</td><td>5 if under 2%</td></tr>
 <tr><td>Trading activity</td><td>24-hour trading volume. Liquidity providers earn fees from trades.</td><td>5 if under $100</td></tr>
-<tr><td>Liquidity lock</td><td>Not checked yet. Shown as grey.</td><td>0</td></tr>
+<tr><td>Liquidity lock</td><td>Share of the pool's LP tokens that are locked or burned, read from RugCheck (a third party). Grey if unavailable or if the token is still on a bonding curve.</td><td>20 if under 50% on a pool under 30 days old, 5 otherwise if under 90%</td></tr>
 </table></div>
 
 <h2>How the score works</h2>
@@ -61,9 +62,13 @@ small,.mute{color:var(--mute)}
 <h2>How wallets are told apart from pools</h2>
 <p>Normal wallets are addresses on a specific mathematical curve. Pools, vaults and bonding curves use program-controlled addresses that are deliberately off that curve, so they can be recognised without a hand-made list. Anything program-controlled is shown in its own row and not counted as a whale.</p>
 
+<h2>How fresh the data is</h2>
+<p>Market data (price, liquidity, volume) is fetched live on every scan. With Live switched on, the page re-scans every 20 seconds while the tab is open, and the page shows when it was last updated. The on-chain safety checks (mint, freeze, holders) change slowly, so they are reused for up to 5 minutes. "Re-scan now" forces everything to be re-read.</p>
+
 <h2>What Pool Shield cannot see</h2>
 <div class="note"><ul>
-<li><b>Liquidity lock.</b> Whether the creator can pull the pool's money out is not checked yet. This is the biggest gap.</li>
+<li><b>Liquidity lock accuracy.</b> The lock figure comes from RugCheck, not from Pool Shield's own reading of the chain. It can be unavailable, and older pools may hold LP in unlocked positions for good reasons.</li>
+<li><b>Exchange and custodian wallets.</b> They are counted like any other wallet, so a token with large exchange balances can look more concentrated than it is.</li>
 <li><b>Bonding-curve pools.</b> Dexscreener does not size them, so liquidity shows as unknown.</li>
 <li><b>What is inside program-controlled accounts.</b> A pool, a lock and a team multisig look the same here. They are shown but not scored, so a team-controlled vault could hide in that row.</li>
 <li><b>Linked wallets.</b> One person can split their tokens across many wallets. Pool Shield counts each wallet on its own.</li>
