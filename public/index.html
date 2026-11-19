@@ -47,6 +47,10 @@ details p{margin:8px 0 0;padding:10px 12px;background:#fff;border-radius:6px;fon
 .mini{padding:6px 12px;font-size:.85rem;background:#fff;color:var(--deep);border:2px solid var(--deep)}
 .mini[aria-pressed=true]{background:var(--deep);color:#fff}
 .stampline{font-size:.85rem;color:#3d6580}
+.recent{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{padding:6px 12px;border:2px solid var(--deep);border-radius:999px;background:#fff;color:var(--deep);font-size:.85rem}
+.linklike{background:none;border:0;color:var(--aqua);text-decoration:underline;padding:6px;font-size:.85rem}
+.linklike:hover{background:none;color:var(--deep)}
 .err{color:var(--bad);font-weight:600}.muted{color:#3d6580}
 footer a{color:var(--aqua)}
 footer{margin-top:40px;font-size:.85rem;color:#3d6580;max-width:60ch}
@@ -62,8 +66,9 @@ footer{margin-top:40px;font-size:.85rem;color:#3d6580;max-width:60ch}
 <input id="mint" autocomplete="off" spellcheck="false" aria-label="Solana token address">
 <button type="submit" id="go"></button>
 </form>
+<div id="recent" class="recent"></div>
 <div id="out" aria-live="polite"></div>
-<footer><p id="foot"></p><p><a id="lm" href="/methodology"></a> | <a id="lr" href="https://github.com/NuesPoll/pool-shield/issues" target="_blank" rel="noopener noreferrer"></a></p></footer>
+<footer><p id="foot"></p><p><a id="lm" href="/methodology"></a> | <a id="lr" href="https://github.com/NuesPoll/pool-shield/issues" target="_blank" rel="noopener noreferrer"></a><span id="fbwrap" hidden> | <a id="lf" target="_blank" rel="noopener noreferrer"></a></span></p></footer>
 </main>
 <script defer src="/_vercel/insights/script.js"></script>
 <script defer src="/app.js"></script>
