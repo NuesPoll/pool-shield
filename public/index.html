@@ -90,22 +90,44 @@ footer{margin-top:40px;font-size:.85rem;color:#3d6580;max-width:60ch}
 .know h3{margin:0 0 6px;font-size:1rem}.know ul{padding-left:18px;margin:0;list-style:disc}.know li{margin:4px 0}.know p{margin:0}
 .badge{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;font-size:.75rem;font-weight:700;color:#fff;vertical-align:middle}
 .qrin .btn{margin:4px}
+body{background:linear-gradient(180deg,#E6F4F2 0,var(--tile) 320px)}
+main{max-width:760px}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.brand svg{width:38px;height:38px;fill:none;stroke:var(--aqua);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.brand h1{margin:0}
+.trust{display:flex;flex-wrap:wrap;gap:8px;margin:-12px 0 22px}
+.trust span{padding:4px 12px;border-radius:999px;background:#fff;border:1px solid var(--line);font-size:.85rem;font-weight:600;color:var(--deep)}
+.field .icon{width:34px;height:34px}
+.field #qrup{right:46px}
+.field input{padding-right:96px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:36px}
+.tiles div{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:0 1px 2px rgba(10,61,98,.06)}
+.tiles h3{margin:0 0 4px;font-size:1rem}.tiles p{margin:0;color:#3d6580;font-size:.92rem}
+.scanned .tiles{display:none}
+.vcard,.know,.rows,.tiles div{box-shadow:0 1px 2px rgba(10,61,98,.06),0 8px 24px rgba(10,61,98,.06)}
+.rows{background:#fff;border:1px solid var(--line);border-radius:12px;padding:0 16px;margin-top:6px}
+.rows .row:first-child{border-top:0}
+button{transition:background .15s,color .15s,transform .05s}
+button:active{transform:translateY(1px)}
 </style>
 </head>
 <body>
 <main>
 <div class="top" role="group" aria-label="Language"><button id="en" type="button">English</button><button id="pcm" type="button">Pidgin</button></div>
-<h1>Pool Shield</h1>
+<div class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg><h1>Pool Shield</h1></div>
 <p class="lead" id="lead"></p>
+<div class="trust"><span id="t1"></span><span id="t2"></span><span id="t3"></span></div>
 <form id="f">
-<div class="field"><input id="mint" autocomplete="off" spellcheck="false" aria-label="Solana token address"><button type="button" id="qr" class="icon"></button></div>
+<div class="field"><input id="mint" autocomplete="off" spellcheck="false" aria-label="Solana token address"><button type="button" id="qrup" class="icon"></button><button type="button" id="qr" class="icon"></button></div>
 <button type="submit" id="go" class="btn"></button>
 <input type="file" id="qrfile" accept="image/*" hidden>
 </form>
 <div id="qrbox" class="qrbox" hidden><div class="qrin"><video id="qrvideo" playsinline muted></video><p id="qrmsg"></p><button type="button" id="qrphoto" class="btn ghost"></button> <button type="button" id="qrclose" class="btn ghost"></button></div></div>
 <div id="recent" class="recent"></div>
+<div id="examples" class="recent"></div>
 <div id="qrout" class="qrbox" hidden><div class="qrin"><div id="qrcv"></div><p id="qrcap"></p><div class="ctl" style="justify-content:center"><button type="button" id="qrt1" class="mini"></button><button type="button" id="qrt2" class="mini"></button><button type="button" id="qrdl" class="btn"></button><button type="button" id="qrx" class="btn ghost"></button></div></div></div>
 <div id="out" aria-live="polite"></div>
+<section id="features" class="tiles"><div><h3 id="f1t"></h3><p id="f1d"></p></div><div><h3 id="f2t"></h3><p id="f2d"></p></div><div><h3 id="f3t"></h3><p id="f3d"></p></div></section>
 <footer><p id="foot"></p><p><a id="lm" href="/methodology"></a> | <a id="lr" href="https://github.com/NuesPoll/pool-shield/issues" target="_blank" rel="noopener noreferrer"></a><span id="fbwrap" hidden> | <a id="lf" target="_blank" rel="noopener noreferrer"></a></span></p></footer>
 </main>
 <script defer src="/_vercel/insights/script.js"></script>

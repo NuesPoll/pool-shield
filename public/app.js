@@ -17,7 +17,12 @@ const UI={
 const ICON={
  refresh:'<svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>',
  share:'<svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.6l6.8-4M8.6 13.4l6.8 4"/></svg>',
+ qr:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM20 14v3M14 20h3M20 20v1"/></svg>',
+ image:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>',
  camera:'<svg viewBox="0 0 24 24"><path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circle cx="12" cy="13" r="4"/></svg>'};
+UI.en.t1="Free";UI.en.t2="No sign-up";UI.en.t3="Live market data";UI.en.ex="Try an example";UI.en.f1t="Know the risks";UI.en.f1d="See who can mint, freeze or dump before you add liquidity.";UI.en.f2t="Understand why";UI.en.f2d="Tap any row for a plain-language reason, in English or Pidgin.";UI.en.f3t="Share the result";UI.en.f3d="Send a link, a result card, or a QR code that opens this exact scan.";
+UI.pcm.t1="Free";UI.pcm.t2="No sign-up";UI.pcm.t3="Live market data";UI.pcm.ex="Try example";UI.pcm.f1t="Know the risk";UI.pcm.f1d="See who fit print, freeze or dump before you add liquidity.";UI.pcm.f2t="Understand why";UI.pcm.f2d="Tap any row make you see why e matter, for English or Pidgin.";UI.pcm.f3t="Share the result";UI.pcm.f3d="Send link, result picture or QR code wey go open this same check.";
+UI.en.qrup="Upload a QR image";UI.pcm.qrup="Upload QR picture";
 UI.en.share="Share";UI.en.first="Read this first";UI.en.noflags="No red or amber flags in the checks that ran.";UI.en.qrdl="Download QR";UI.en.bd={ok:"Good",warn:"Watch",bad:"Risk",unknown:"Unknown",info:"Info"};
 UI.pcm.share="Share";UI.pcm.first="Make you read this first";UI.pcm.noflags="No red or amber flag for the checks wey run.";UI.pcm.qrdl="Download QR";UI.pcm.bd={ok:"Good",warn:"Dey careful",bad:"Risk",unknown:"No know",info:"Info"};
 const $=s=>document.querySelector(s), out=$("#out");
@@ -51,6 +56,13 @@ function renderRecent(){
   kids.push(c);box.replaceChildren(...kids);
 }
 
+const EXAMPLES=[["USDC","EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"],["SOL","So11111111111111111111111111111111111111112"],["DEGX","DHTSie9phDCpRZYV229bNk8b9hvs9PUZT4nW47Kyjupx"]];
+function renderExamples(){
+  const box=$("#examples");if(!box)return;
+  const kids=[el("span",UI[lang].ex+":","stampline")];
+  EXAMPLES.forEach(([n,m])=>{const b=el("button",n,"chip");b.type="button";b.onclick=()=>{$("#mint").value=m;history.replaceState(null,"","?mint="+encodeURIComponent(m));run(m)};kids.push(b)});
+  box.replaceChildren(...kids);
+}
 // ---- sharing
 function shareUrl(){return location.origin+"/?mint="+encodeURIComponent(last.mint)}
 function shareText(){
@@ -134,6 +146,8 @@ function chrome(){
   $("#lead").textContent=u.lead;$("#mint").placeholder=u.ph;$("#go").textContent=u.go;$("#foot").textContent=u.foot;$("#lm").textContent=u.meth;$("#lr").textContent=u.rep;
   if(FEEDBACK_URL){const a=$("#lf");a.textContent=u.fb;a.href=FEEDBACK_URL;$("#fbwrap").hidden=false}
   renderRecent();
+  ["t1","t2","t3","f1t","f1d","f2t","f2d","f3t","f3d"].forEach(k=>{$("#"+k).textContent=u[k]});renderExamples();
+  $("#qrup").innerHTML=ICON.image;$("#qrup").title=u.qrup;$("#qrup").setAttribute("aria-label",u.qrup);
   $("#qr").innerHTML=ICON.camera;$("#qr").title=u.qr;$("#qr").setAttribute("aria-label",u.qr);$("#qrphoto").textContent=u.qrphoto;$("#qrclose").textContent=u.close;
   $("#en").setAttribute("aria-pressed",lang==="en");$("#pcm").setAttribute("aria-pressed",lang==="pcm");
 }
@@ -169,8 +183,10 @@ function render(d){
   [[u.copy,copyLink],[u.wa,whatsapp],[u.img,saveImage],[u.qrshow,showQr]].forEach(([t,f])=>{const m=el("button",t,"mi");m.type="button";m.onclick=()=>{menu.hidden=true;f(m)};menu.append(m)});
   sb.onclick=e=>{e.stopPropagation();menu.hidden=!menu.hidden};
   const shw=el("div",null,"shw");shw.append(sb,menu);
-  ctl.append(lb,rb,st,shw);
-  const list=el("div");
+  const dq=el("button",null,"btn ghost");dq.type="button";dq.innerHTML=ICON.qr;dq.append(document.createTextNode(u.qrdl));dq.onclick=quickQr;
+  ctl.append(lb,rb,st,dq,shw);
+  document.body.classList.add("scanned");
+  const list=el("div",null,"rows");
   d.checks.forEach(c=>{
     const row=el("div",null,"row");row.append(el("i",null,c.status));
     const det=el("details"),sum=el("summary");det.dataset.id=c.id;if(open.has(c.id))det.open=true;
@@ -217,6 +233,17 @@ document.addEventListener("visibilitychange",()=>{if(document.hidden)clearTimeou
 let qrStream=null,qrTimer=null,qrBusy=false;
 function loadJsQR(){return new Promise((res,rej)=>{if(window.jsQR)return res();const s=document.createElement("script");s.src="/jsqr.js";s.onload=res;s.onerror=rej;document.head.append(s)})}
 function addrFrom(text){const m=String(text||"").match(/[1-9A-HJ-NP-Za-km-z]{32,44}/);return m?m[0]:null}
+async function decodeFrom(src,w0,h0,scales){
+  try{if("BarcodeDetector" in window){const r=await new window.BarcodeDetector({formats:["qr_code"]}).detect(src);if(r&&r[0]&&r[0].rawValue)return r[0].rawValue}}catch(e){}
+  if(!window.jsQR)return null;
+  for(const max of (scales||[1600,1000,640])){
+    const w=Math.min(max,w0),h=Math.round(h0*w/w0),c=document.createElement("canvas");c.width=w;c.height=h;
+    const g=c.getContext("2d",{willReadFrequently:true});g.drawImage(src,0,0,w,h);
+    const r=window.jsQR(g.getImageData(0,0,w,h).data,w,h,{inversionAttempts:"attemptBoth"});
+    if(r&&r.data)return r.data;
+  }
+  return null;
+}
 function qrMsg(t){$("#qrmsg").textContent=t}
 function qrStop(){clearInterval(qrTimer);qrTimer=null;if(qrStream){qrStream.getTracks().forEach(x=>x.stop());qrStream=null}$("#qrbox").hidden=true}
 function qrUse(text){
@@ -231,29 +258,27 @@ async function qrStart(){
   try{
     qrStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});
     const v=$("#qrvideo");v.srcObject=qrStream;await v.play();
-    const c=document.createElement("canvas"),g=c.getContext("2d",{willReadFrequently:true});
-    qrTimer=setInterval(()=>{
-      if(qrBusy||!v.videoWidth||!window.jsQR)return;qrBusy=true;
-      const w=Math.min(520,v.videoWidth),h=Math.round(v.videoHeight*w/v.videoWidth);c.width=w;c.height=h;g.drawImage(v,0,0,w,h);
-      const r=window.jsQR(g.getImageData(0,0,w,h).data,w,h);
-      qrBusy=false;if(r&&r.data)qrUse(r.data);
-    },200);
+    qrTimer=setInterval(async()=>{
+      if(qrBusy||!v.videoWidth)return;qrBusy=true;
+      const data=await decodeFrom(v,v.videoWidth,v.videoHeight,[960]);
+      qrBusy=false;if(data)qrUse(data);
+    },250);
   }catch(e){qrMsg(u.qrdenied)}
 }
 function qrFromFile(f){
   if(!f)return;
   const img=new Image(),url=URL.createObjectURL(f);
   img.onload=async()=>{
-    try{await loadJsQR()}catch(e){}
-    const w=Math.min(1000,img.width),h=Math.round(img.height*w/img.width),c=document.createElement("canvas");c.width=w;c.height=h;
-    const g=c.getContext("2d");g.drawImage(img,0,0,w,h);URL.revokeObjectURL(url);
-    const r=window.jsQR&&window.jsQR(g.getImageData(0,0,w,h).data,w,h);
-    if(!(r&&r.data&&qrUse(r.data)))out.replaceChildren(el("p",UI[lang].qrfail,"err"));
+    try{await loadJsQR()}catch(e){out.replaceChildren(el("p",UI[lang].qrfail,"err"));return}
+    const data=await decodeFrom(img,img.naturalWidth,img.naturalHeight);URL.revokeObjectURL(url);
+    if(!(data&&qrUse(data)))out.replaceChildren(el("p",UI[lang].qrfail,"err"));
   };
+  img.onerror=()=>out.replaceChildren(el("p",UI[lang].qrfail,"err"));
   img.src=url;
 }
 $("#qr").addEventListener("click",qrStart);
 $("#qrphoto").addEventListener("click",()=>$("#qrfile").click());
+$("#qrup").addEventListener("click",()=>$("#qrfile").click());
 $("#qrfile").addEventListener("change",e=>{qrFromFile(e.target.files[0]);e.target.value=""});
 $("#qrclose").addEventListener("click",qrStop);
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){qrStop();$("#qrout").hidden=true}});
@@ -279,14 +304,15 @@ function drawQr(){
 async function showQr(){if(!last)return;try{await loadQrGen()}catch(e){}$("#qrout").hidden=false;drawQr()}
 $("#qrt1").addEventListener("click",()=>{qrMode="link";drawQr()});
 $("#qrt2").addEventListener("click",()=>{qrMode="token";drawQr()});
+async function quickQr(){if(!last)return;qrMode="link";try{await loadQrGen()}catch(e){}downloadQr()}
 async function downloadQr(){
   if(!last||!window.qrcode)return;
   const u=UI[lang],text=qrMode==="link"?shareUrl():last.mint,F='"Familjen Grotesk", system-ui, sans-serif';
   const q=qrCanvas(text,720),c=document.createElement("canvas");c.width=800;c.height=960;
   const g=c.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,800,960);g.imageSmoothingEnabled=false;g.drawImage(q,40,120,720,720);
   g.fillStyle="#0A3D62";g.font="700 44px "+F;g.fillText("Pool Shield",40,80);
-  g.font="600 30px "+F;g.fillText((last.token?last.token.symbol:"")+" | "+(qrMode==="link"?u.qrlink:u.qrtoken),40,890);
-  g.fillStyle="#3d6580";g.font="400 22px "+F;g.fillText(location.host,40,930);
+  g.font="600 30px "+F;g.fillText((last.token?last.token.symbol:"")+" | "+(qrMode==="link"?(last.verdict+(last.score==null?"":" "+last.score+"/100")):u.qrtoken),40,890);
+  g.fillStyle="#3d6580";g.font="400 22px "+F;g.fillText((qrMode==="link"?"Scan to open this result | ":"Token address | ")+location.host,40,930);
   const blob=await new Promise(r=>c.toBlob(r,"image/png"));if(!blob)return;
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="pool-shield-qr.png";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
 }
