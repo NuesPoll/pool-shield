@@ -1,0 +1,111 @@
+{
+  "USDC": {
+    "verdict": "Known issuer",
+    "score": null,
+    "status": {
+      "mint": "info",
+      "freeze": "info",
+      "ext": "ok",
+      "top1": "info",
+      "top10": "ok",
+      "vault": "info",
+      "liq": "ok",
+      "activity": "ok",
+      "lock": "unknown"
+    }
+  },
+  "USDT": {
+    "verdict": "Known issuer",
+    "score": null,
+    "status": {
+      "mint": "info",
+      "freeze": "info",
+      "ext": "ok",
+      "top1": "info",
+      "top10": "info",
+      "vault": "info",
+      "liq": "ok",
+      "activity": "ok",
+      "lock": "unknown"
+    }
+  },
+  "PYUSD": {
+    "verdict": "Known issuer",
+    "score": null,
+    "status": {
+      "mint": "info",
+      "freeze": "info",
+      "ext": "bad",
+      "top1": "info",
+      "top10": "info",
+      "vault": "info",
+      "liq": "ok",
+      "age": "ok",
+      "activity": "ok",
+      "lock": "unknown"
+    }
+  },
+  "Wrapped SOL": {
+    "verdict": "Lower risk",
+    "score": 0,
+    "status": {
+      "mint": "ok",
+      "freeze": "ok",
+      "ext": "ok",
+      "top1": "ok",
+      "top10": "ok",
+      "liq": "ok",
+      "age": "ok",
+      "activity": "ok",
+      "lock": "unknown"
+    }
+  },
+  "BONK": {
+    "verdict": "Caution",
+    "score": 23,
+    "status": {
+      "mint": "ok",
+      "freeze": "ok",
+      "ext": "ok",
+      "top1": "warn",
+      "top10": "warn",
+      "liq": "ok",
+      "age": "ok",
+      "ratio": "warn",
+      "activity": "ok",
+      "lock": "unknown"
+    }
+  },
+  "WIF": {
+    "verdict": "Caution",
+    "score": 18,
+    "status": {
+      "mint": "ok",
+      "freeze": "ok",
+      "ext": "ok",
+      "top1": "warn",
+      "top10": "warn",
+      "vault": "info",
+      "liq": "ok",
+      "age": "ok",
+      "activity": "ok",
+      "lock": "unknown"
+    }
+  },
+  "DEGX (address pinned on the verified @degxifi account)": {
+    "verdict": "Lower risk",
+    "score": 0,
+    "status": {
+      "mint": "ok",
+      "freeze": "ok",
+      "ext": "ok",
+      "top1": "ok",
+      "top10": "ok",
+      "vault": "info",
+      "liq": "unknown",
+      "age": "ok",
+      "activity": "ok",
+      "lock": "unknown"
+    }
+  }
+}

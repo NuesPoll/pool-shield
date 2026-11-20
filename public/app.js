@@ -3,17 +3,23 @@ const FEEDBACK_URL="";
 const UI={
  en:{lead:"Paste a Solana token address. See the risks before you put money in its liquidity pool.",ph:"Token address",go:"Scan token",busy:"Scanning...",risk:"risk",tip:"Tap any row to see why it matters.",dex:"View on Dexscreener",liq:"liquidity",vol:"24h volume",price:"price",mcap:"market cap",unk:"Unknown token",
   live:"Live",paused:"Paused",rescan:"Re-scan now",updated:"Updated {s}s ago",onchain:"Safety checks from {m} min ago",
-  qr:"Scan QR",qrphoto:"From photo",qrhint:"Point the camera at a QR code that holds a token address.",qrfail:"No Solana token address found in that QR code.",qrdenied:"Camera not available. Close this and use From photo instead.",close:"Close",
+  qr:"Scan QR",qrphoto:"Choose a photo",qrshow:"Show QR",qrlink:"Result link",qrtoken:"Token address",qrcap1:"Scan this to open this result in Pool Shield.",qrcap2:"Scan this to read the token address, for example with Pool Shield's Scan QR.",qrhint:"Point the camera at a QR code that holds a token address.",qrfail:"No Solana token address found in that QR code.",qrdenied:"Camera not available. Use Choose a photo below instead.",close:"Close",
   meth:"How it works",rep:"Report an error",fb:"Give feedback",copy:"Copy link",copied:"Copied",wa:"Share on WhatsApp",img:"Save as image",recent:"Recent scans",clear:"Clear",
   stxt:"Pool Shield scan: {n} - {v}. Check any Solana token free:",disc:"Not financial advice. A lower score means fewer red flags, not a safe investment.",flags:"Biggest flags",cov:"{a} of {b} checks completed. Grey rows could not be checked.",
   foot:"Reads public Solana data and Dexscreener. A lower score means fewer red flags, not a safe investment. Not financial advice. Independent project by Rudy, cybersecurity student at LAUTECH, built for the Degxifi community."},
  pcm:{lead:"Paste Solana token address. Check the risk before you put your money for the liquidity pool.",ph:"Token address",go:"Check am",busy:"E dey check...",risk:"risk",tip:"Tap any row make you see why e matter.",dex:"See am for Dexscreener",liq:"liquidity",vol:"24h volume",price:"price",mcap:"market cap",unk:"Token wey we no know",
   live:"Live",paused:"Paused",rescan:"Check again now",updated:"Updated {s}s ago",onchain:"Safety checks from {m} min ago",
-  qr:"Scan QR",qrphoto:"From picture",qrhint:"Point the camera at QR code wey get token address.",qrfail:"We no see Solana token address for that QR code.",qrdenied:"Camera no dey available. Close this and use From picture.",close:"Close",
+  qr:"Scan QR",qrphoto:"Choose a picture",qrshow:"Show QR",qrlink:"Result link",qrtoken:"Token address",qrcap1:"Scan am to open this result for Pool Shield.",qrcap2:"Scan am to read the token address, like with Pool Shield Scan QR.",qrhint:"Point the camera at QR code wey get token address.",qrfail:"We no see Solana token address for that QR code.",qrdenied:"Camera no dey available. Use Choose a picture below.",close:"Close",
   meth:"How e dey work",rep:"Report error",fb:"Tell us wetin you see",copy:"Copy link",copied:"E don copy",wa:"Share for WhatsApp",img:"Save as picture",recent:"Recent checks",clear:"Clear",
   stxt:"Pool Shield check: {n} - {v}. Check any Solana token free:",disc:"No be financial advice. Small score mean small red flags, e no mean say the investment safe.",flags:"Biggest flags",cov:"{a} of {b} checks don finish. Grey rows we no fit check.",
   foot:"We dey read public Solana data and Dexscreener. Small score mean small red flags, e no mean say the investment safe. No be financial advice. Rudy, cybersecurity student for LAUTECH, build am as independent project for the Degxifi community."}
 };
+const ICON={
+ refresh:'<svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>',
+ share:'<svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.6l6.8-4M8.6 13.4l6.8 4"/></svg>',
+ camera:'<svg viewBox="0 0 24 24"><path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circle cx="12" cy="13" r="4"/></svg>'};
+UI.en.share="Share";UI.en.first="Read this first";UI.en.noflags="No red or amber flags in the checks that ran.";UI.en.qrdl="Download QR";UI.en.bd={ok:"Good",warn:"Watch",bad:"Risk",unknown:"Unknown",info:"Info"};
+UI.pcm.share="Share";UI.pcm.first="Make you read this first";UI.pcm.noflags="No red or amber flag for the checks wey run.";UI.pcm.qrdl="Download QR";UI.pcm.bd={ok:"Good",warn:"Dey careful",bad:"Risk",unknown:"No know",info:"Info"};
 const $=s=>document.querySelector(s), out=$("#out");
 let lang="en", last=null, live=true, mint="", timer=null, reqId=0;
 try{lang=localStorage.getItem("lang")==="pcm"?"pcm":"en"}catch(e){}
@@ -71,10 +77,10 @@ function wrapText(g,text,max,lines){
   out[lines-1]=last+"...";return out;
 }
 function card(d){
-  const c=document.createElement("canvas");c.width=1080;c.height=1200;
+  const c=document.createElement("canvas");c.width=1080;c.height=1300;
   const g=c.getContext("2d");if(!g)return null;
   const p=lang==="pcm",u=UI[lang],F='"Familjen Grotesk", system-ui, sans-serif';
-  g.fillStyle="#F2F9F8";g.fillRect(0,0,1080,1200);
+  g.fillStyle="#F2F9F8";g.fillRect(0,0,1080,1300);
   g.fillStyle="#0A3D62";g.fillRect(0,0,1080,14);
   g.textBaseline="alphabetic";
   g.fillStyle="#0A3D62";g.font="700 64px "+F;g.fillText("Pool Shield",70,120);
@@ -104,12 +110,17 @@ function card(d){
   // footer
   g.fillStyle="#0A3D62";g.font="700 36px "+F;g.fillText(location.host,70,1112);
   g.fillStyle="#3d6580";g.font="400 24px "+F;
-  wrapText(g,u.disc+" "+new Date(d.scannedAt).toISOString().slice(0,16).replace("T"," ")+" UTC",940,2).forEach((l,k)=>g.fillText(l,70,1150+k*30));
+  wrapText(g,u.disc+" "+new Date(d.scannedAt).toISOString().slice(0,16).replace("T"," ")+" UTC",730,2).forEach((l,k)=>g.fillText(l,70,1150+k*30));
+  if(window.qrcode){
+    g.drawImage(qrCanvas(location.origin+"/?mint="+encodeURIComponent(d.mint),400),810,1070,200,200);
+    g.fillStyle="#3d6580";g.font="400 22px "+F;g.fillText(p?"Scan am make you open":"Scan to open",810,1292);
+  }
   return c;
 }
 async function saveImage(){
   if(!last)return;
   try{if(document.fonts&&document.fonts.ready)await document.fonts.ready}catch(e){}
+  try{await loadQrGen()}catch(e){}
   const c=card(last);if(!c)return;
   const blob=await new Promise(r=>c.toBlob(r,"image/png"));if(!blob)return;
   const sym=(last.token&&last.token.symbol?last.token.symbol:"scan").replace(/[^A-Za-z0-9]/g,"")||"scan";
@@ -123,7 +134,7 @@ function chrome(){
   $("#lead").textContent=u.lead;$("#mint").placeholder=u.ph;$("#go").textContent=u.go;$("#foot").textContent=u.foot;$("#lm").textContent=u.meth;$("#lr").textContent=u.rep;
   if(FEEDBACK_URL){const a=$("#lf");a.textContent=u.fb;a.href=FEEDBACK_URL;$("#fbwrap").hidden=false}
   renderRecent();
-  $("#qr").textContent=u.qr;$("#qrphoto").textContent=u.qrphoto;$("#qrclose").textContent=u.close;
+  $("#qr").innerHTML=ICON.camera;$("#qr").title=u.qr;$("#qr").setAttribute("aria-label",u.qr);$("#qrphoto").textContent=u.qrphoto;$("#qrclose").textContent=u.close;
   $("#en").setAttribute("aria-pressed",lang==="en");$("#pcm").setAttribute("aria-pressed",lang==="pcm");
 }
 function stamp(){
@@ -147,26 +158,34 @@ function render(d){
     meta.append(document.createTextNode(t));
     if(q.url&&q.url.startsWith("https://dexscreener.com/")){const a=el("a",u.dex);a.href=q.url;a.target="_blank";a.rel="noopener noreferrer";meta.append(a)}
   }
-  const ctl=el("div",null,"ctl");
-  const lb=el("button",(live?u.live+" (on)":u.paused),"mini");lb.type="button";lb.setAttribute("aria-pressed",live);
+  const ctl=el("div",null,"bar");
+  const lb=el("button",null,"live"+(live?" on":""));lb.type="button";lb.setAttribute("aria-pressed",live);
+  lb.append(el("span",null,"dot"),document.createTextNode(live?u.live:u.paused));
   lb.onclick=()=>{live=!live;render(last);if(live)refresh(false);else clearTimeout(timer)};
-  const rb=el("button",u.rescan,"mini");rb.type="button";rb.onclick=()=>refresh(true);
+  const rb=el("button",null,"icon");rb.type="button";rb.title=u.rescan;rb.setAttribute("aria-label",u.rescan);rb.innerHTML=ICON.refresh;rb.onclick=()=>refresh(true);
   const st=el("span",null,"stampline");st.id="stamp";
-  ctl.append(lb,rb,st);
-  const sh=el("div",null,"ctl");
-  const cb=el("button",u.copy,"mini");cb.type="button";cb.onclick=()=>copyLink(cb);
-  const wb=el("button",u.wa,"mini");wb.type="button";wb.onclick=whatsapp;
-  const ib=el("button",u.img,"mini");ib.type="button";ib.onclick=saveImage;
-  sh.append(cb,wb,ib);
+  const sb=el("button",null,"btn ghost");sb.type="button";sb.innerHTML=ICON.share;sb.append(document.createTextNode(u.share));
+  const menu=el("div",null,"menu");menu.hidden=true;
+  [[u.copy,copyLink],[u.wa,whatsapp],[u.img,saveImage],[u.qrshow,showQr]].forEach(([t,f])=>{const m=el("button",t,"mi");m.type="button";m.onclick=()=>{menu.hidden=true;f(m)};menu.append(m)});
+  sb.onclick=e=>{e.stopPropagation();menu.hidden=!menu.hidden};
+  const shw=el("div",null,"shw");shw.append(sb,menu);
+  ctl.append(lb,rb,st,shw);
   const list=el("div");
   d.checks.forEach(c=>{
     const row=el("div",null,"row");row.append(el("i",null,c.status));
     const det=el("details"),sum=el("summary");det.dataset.id=c.id;if(open.has(c.id))det.open=true;
-    sum.append(el("b",p?c.labelPcm:c.label),el("span",p?c.detailPcm:c.detail));
+    const nm=el("b",p?c.labelPcm:c.label);nm.append(el("span",u.bd[c.status],"badge "+c.status));
+    sum.append(nm,el("span",p?c.detailPcm:c.detail));
     det.append(sum,el("p",p?c.whyPcm:c.why));row.append(det);list.append(row);
   });
   const head=(p?d.verdictPcm:d.verdict)+(d.score==null?"":" ("+d.score+"/100 "+u.risk+")");
-  out.replaceChildren(strip,el("h2",head),el("p",d.token?d.token.name+" ("+d.token.symbol+")":u.unk,"tok"),meta,ctl,sh,el("p",d.coverage?u.cov.replace("{a}",d.coverage.done).replace("{b}",d.coverage.total):"","tip"),el("p",u.tip,"tip"),list);
+  const vc=el("section",null,"vcard "+(VCOL[d.verdict]||"unknown"));
+  vc.append(el("h2",head),el("p",d.token?d.token.name+" ("+d.token.symbol+")":u.unk,"tok"),meta,strip);
+  const sev={bad:0,warn:1},flags=d.checks.filter(c=>c.status in sev).sort((x,y)=>sev[x.status]-sev[y.status]).slice(0,3);
+  const know=el("div",null,"know");know.append(el("h3",u.first));
+  if(flags.length){const ul=el("ul");flags.forEach(c=>{const li=el("li");li.append(el("b",p?c.labelPcm:c.label),document.createTextNode(": "+(p?c.detailPcm:c.detail)));ul.append(li)});know.append(ul)}
+  else know.append(el("p",u.noflags));
+  out.replaceChildren(vc,ctl,know,el("p",d.coverage?u.cov.replace("{a}",d.coverage.done).replace("{b}",d.coverage.total):"","tip"),el("p",u.tip,"tip"),list);
   stamp();
 }
 function schedule(){clearTimeout(timer);if(live&&mint&&!document.hidden)timer=setTimeout(()=>refresh(false),20000)}
@@ -237,7 +256,43 @@ $("#qr").addEventListener("click",qrStart);
 $("#qrphoto").addEventListener("click",()=>$("#qrfile").click());
 $("#qrfile").addEventListener("change",e=>{qrFromFile(e.target.files[0]);e.target.value=""});
 $("#qrclose").addEventListener("click",qrStop);
-document.addEventListener("keydown",e=>{if(e.key==="Escape")qrStop()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){qrStop();$("#qrout").hidden=true}});
+// ---- QR generator (library is loaded only when needed)
+function loadQrGen(){return new Promise((res,rej)=>{if(window.qrcode)return res();const s=document.createElement("script");s.src="/qrgen.js";s.onload=res;s.onerror=rej;document.head.append(s)})}
+function qrCanvas(text,size){
+  const q=window.qrcode(0,"M");q.addData(text);q.make();
+  const n=q.getModuleCount(),pad=4,cell=Math.max(1,Math.floor(size/(n+pad*2))),s=cell*(n+pad*2);
+  const c=document.createElement("canvas");c.width=c.height=s;
+  const g=c.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,s,s);g.fillStyle="#0A3D62";
+  for(let r=0;r<n;r++)for(let k=0;k<n;k++)if(q.isDark(r,k))g.fillRect((k+pad)*cell,(r+pad)*cell,cell,cell);
+  return c;
+}
+let qrMode="link";
+function drawQr(){
+  if(!last)return;
+  const u=UI[lang],text=qrMode==="link"?shareUrl():last.mint;
+  $("#qrt1").textContent=u.qrlink;$("#qrt2").textContent=u.qrtoken;$("#qrx").textContent=u.close;$("#qrdl").textContent=u.qrdl;$("#qrphoto").textContent=u.qrphoto;
+  $("#qrt1").setAttribute("aria-pressed",qrMode==="link");$("#qrt2").setAttribute("aria-pressed",qrMode==="token");
+  $("#qrcap").textContent=qrMode==="link"?u.qrcap1:u.qrcap2;
+  $("#qrcv").replaceChildren(window.qrcode?qrCanvas(text,600):el("p",u.qrfail,"err"));
+}
+async function showQr(){if(!last)return;try{await loadQrGen()}catch(e){}$("#qrout").hidden=false;drawQr()}
+$("#qrt1").addEventListener("click",()=>{qrMode="link";drawQr()});
+$("#qrt2").addEventListener("click",()=>{qrMode="token";drawQr()});
+async function downloadQr(){
+  if(!last||!window.qrcode)return;
+  const u=UI[lang],text=qrMode==="link"?shareUrl():last.mint,F='"Familjen Grotesk", system-ui, sans-serif';
+  const q=qrCanvas(text,720),c=document.createElement("canvas");c.width=800;c.height=960;
+  const g=c.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,800,960);g.imageSmoothingEnabled=false;g.drawImage(q,40,120,720,720);
+  g.fillStyle="#0A3D62";g.font="700 44px "+F;g.fillText("Pool Shield",40,80);
+  g.font="600 30px "+F;g.fillText((last.token?last.token.symbol:"")+" | "+(qrMode==="link"?u.qrlink:u.qrtoken),40,890);
+  g.fillStyle="#3d6580";g.font="400 22px "+F;g.fillText(location.host,40,930);
+  const blob=await new Promise(r=>c.toBlob(r,"image/png"));if(!blob)return;
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="pool-shield-qr.png";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+$("#qrdl").addEventListener("click",downloadQr);
+document.addEventListener("click",()=>document.querySelectorAll(".menu").forEach(m=>m.hidden=true));
+$("#qrx").addEventListener("click",()=>{$("#qrout").hidden=true});
 setInterval(stamp,1000);
 chrome();
 const q=new URLSearchParams(location.search).get("mint");if(q){$("#mint").value=q;run(q)}
