@@ -3,11 +3,13 @@ const FEEDBACK_URL="";
 const UI={
  en:{lead:"Paste a Solana token address. See the risks before you put money in its liquidity pool.",ph:"Token address",go:"Scan token",busy:"Scanning...",risk:"risk",tip:"Tap any row to see why it matters.",dex:"View on Dexscreener",liq:"liquidity",vol:"24h volume",price:"price",mcap:"market cap",unk:"Unknown token",
   live:"Live",paused:"Paused",rescan:"Re-scan now",updated:"Updated {s}s ago",onchain:"Safety checks from {m} min ago",
+  qr:"Scan QR",qrphoto:"From photo",qrhint:"Point the camera at a QR code that holds a token address.",qrfail:"No Solana token address found in that QR code.",qrdenied:"Camera not available. Close this and use From photo instead.",close:"Close",
   meth:"How it works",rep:"Report an error",fb:"Give feedback",copy:"Copy link",copied:"Copied",wa:"Share on WhatsApp",img:"Save as image",recent:"Recent scans",clear:"Clear",
   stxt:"Pool Shield scan: {n} - {v}. Check any Solana token free:",disc:"Not financial advice. A lower score means fewer red flags, not a safe investment.",flags:"Biggest flags",cov:"{a} of {b} checks completed. Grey rows could not be checked.",
   foot:"Reads public Solana data and Dexscreener. A lower score means fewer red flags, not a safe investment. Not financial advice. Independent project by Rudy, cybersecurity student at LAUTECH, built for the Degxifi community."},
  pcm:{lead:"Paste Solana token address. Check the risk before you put your money for the liquidity pool.",ph:"Token address",go:"Check am",busy:"E dey check...",risk:"risk",tip:"Tap any row make you see why e matter.",dex:"See am for Dexscreener",liq:"liquidity",vol:"24h volume",price:"price",mcap:"market cap",unk:"Token wey we no know",
   live:"Live",paused:"Paused",rescan:"Check again now",updated:"Updated {s}s ago",onchain:"Safety checks from {m} min ago",
+  qr:"Scan QR",qrphoto:"From picture",qrhint:"Point the camera at QR code wey get token address.",qrfail:"We no see Solana token address for that QR code.",qrdenied:"Camera no dey available. Close this and use From picture.",close:"Close",
   meth:"How e dey work",rep:"Report error",fb:"Tell us wetin you see",copy:"Copy link",copied:"E don copy",wa:"Share for WhatsApp",img:"Save as picture",recent:"Recent checks",clear:"Clear",
   stxt:"Pool Shield check: {n} - {v}. Check any Solana token free:",disc:"No be financial advice. Small score mean small red flags, e no mean say the investment safe.",flags:"Biggest flags",cov:"{a} of {b} checks don finish. Grey rows we no fit check.",
   foot:"We dey read public Solana data and Dexscreener. Small score mean small red flags, e no mean say the investment safe. No be financial advice. Rudy, cybersecurity student for LAUTECH, build am as independent project for the Degxifi community."}
@@ -121,6 +123,7 @@ function chrome(){
   $("#lead").textContent=u.lead;$("#mint").placeholder=u.ph;$("#go").textContent=u.go;$("#foot").textContent=u.foot;$("#lm").textContent=u.meth;$("#lr").textContent=u.rep;
   if(FEEDBACK_URL){const a=$("#lf");a.textContent=u.fb;a.href=FEEDBACK_URL;$("#fbwrap").hidden=false}
   renderRecent();
+  $("#qr").textContent=u.qr;$("#qrphoto").textContent=u.qrphoto;$("#qrclose").textContent=u.close;
   $("#en").setAttribute("aria-pressed",lang==="en");$("#pcm").setAttribute("aria-pressed",lang==="pcm");
 }
 function stamp(){
@@ -191,6 +194,50 @@ function setLang(l){lang=l;try{localStorage.setItem("lang",l)}catch(e){}chrome()
 $("#en").addEventListener("click",()=>setLang("en"));$("#pcm").addEventListener("click",()=>setLang("pcm"));
 $("#f").addEventListener("submit",e=>{e.preventDefault();const m=$("#mint").value.trim();if(m){history.replaceState(null,"","?mint="+encodeURIComponent(m));run(m)}});
 document.addEventListener("visibilitychange",()=>{if(document.hidden)clearTimeout(timer);else if(live&&mint)refresh(false)});
+// ---- QR scanner (decoder is jsQR, loaded only when needed)
+let qrStream=null,qrTimer=null,qrBusy=false;
+function loadJsQR(){return new Promise((res,rej)=>{if(window.jsQR)return res();const s=document.createElement("script");s.src="/jsqr.js";s.onload=res;s.onerror=rej;document.head.append(s)})}
+function addrFrom(text){const m=String(text||"").match(/[1-9A-HJ-NP-Za-km-z]{32,44}/);return m?m[0]:null}
+function qrMsg(t){$("#qrmsg").textContent=t}
+function qrStop(){clearInterval(qrTimer);qrTimer=null;if(qrStream){qrStream.getTracks().forEach(x=>x.stop());qrStream=null}$("#qrbox").hidden=true}
+function qrUse(text){
+  const a=addrFrom(text);
+  if(!a){qrMsg(UI[lang].qrfail);return false}
+  qrStop();$("#mint").value=a;history.replaceState(null,"","?mint="+encodeURIComponent(a));run(a);return true;
+}
+async function qrStart(){
+  const u=UI[lang];
+  try{await loadJsQR()}catch(e){}
+  $("#qrbox").hidden=false;qrMsg(u.qrhint);
+  try{
+    qrStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});
+    const v=$("#qrvideo");v.srcObject=qrStream;await v.play();
+    const c=document.createElement("canvas"),g=c.getContext("2d",{willReadFrequently:true});
+    qrTimer=setInterval(()=>{
+      if(qrBusy||!v.videoWidth||!window.jsQR)return;qrBusy=true;
+      const w=Math.min(520,v.videoWidth),h=Math.round(v.videoHeight*w/v.videoWidth);c.width=w;c.height=h;g.drawImage(v,0,0,w,h);
+      const r=window.jsQR(g.getImageData(0,0,w,h).data,w,h);
+      qrBusy=false;if(r&&r.data)qrUse(r.data);
+    },200);
+  }catch(e){qrMsg(u.qrdenied)}
+}
+function qrFromFile(f){
+  if(!f)return;
+  const img=new Image(),url=URL.createObjectURL(f);
+  img.onload=async()=>{
+    try{await loadJsQR()}catch(e){}
+    const w=Math.min(1000,img.width),h=Math.round(img.height*w/img.width),c=document.createElement("canvas");c.width=w;c.height=h;
+    const g=c.getContext("2d");g.drawImage(img,0,0,w,h);URL.revokeObjectURL(url);
+    const r=window.jsQR&&window.jsQR(g.getImageData(0,0,w,h).data,w,h);
+    if(!(r&&r.data&&qrUse(r.data)))out.replaceChildren(el("p",UI[lang].qrfail,"err"));
+  };
+  img.src=url;
+}
+$("#qr").addEventListener("click",qrStart);
+$("#qrphoto").addEventListener("click",()=>$("#qrfile").click());
+$("#qrfile").addEventListener("change",e=>{qrFromFile(e.target.files[0]);e.target.value=""});
+$("#qrclose").addEventListener("click",qrStop);
+document.addEventListener("keydown",e=>{if(e.key==="Escape")qrStop()});
 setInterval(stamp,1000);
 chrome();
 const q=new URLSearchParams(location.search).get("mint");if(q){$("#mint").value=q;run(q)}
