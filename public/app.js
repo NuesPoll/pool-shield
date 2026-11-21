@@ -3,13 +3,13 @@ const FEEDBACK_URL="";
 const UI={
  en:{lead:"Paste a Solana token address. See the risks before you put money in its liquidity pool.",ph:"Token address",go:"Scan token",busy:"Scanning...",risk:"risk",tip:"Tap any row to see why it matters.",dex:"View on Dexscreener",liq:"liquidity",vol:"24h volume",price:"price",mcap:"market cap",unk:"Unknown token",
   live:"Live",paused:"Paused",rescan:"Re-scan now",updated:"Updated {s}s ago",onchain:"Safety checks from {m} min ago",
-  qr:"Scan QR",qrphoto:"Choose a photo",qrshow:"Show QR",qrlink:"Result link",qrtoken:"Token address",qrcap1:"Scan this to open this result in Pool Shield.",qrcap2:"Scan this to read the token address, for example with Pool Shield's Scan QR.",qrhint:"Point the camera at a QR code that holds a token address.",qrfail:"No Solana token address found in that QR code.",qrdenied:"Camera not available. Use Choose a photo below instead.",close:"Close",
+  qr:"Scan QR",qrnone:"We could not find a QR code in that picture. Try a sharper, closer photo or a screenshot.",qrphoto:"Choose a photo",qrshow:"Show QR",qrlink:"Result link",qrtoken:"Token address",qrcap1:"Scan this to open this result in Pool Shield.",qrcap2:"Scan this to read the token address, for example with Pool Shield's Scan QR.",qrhint:"Point the camera at a QR code that holds a token address.",qrfail:"No Solana token address found in that QR code.",qrdenied:"Camera not available. Use Choose a photo below instead.",close:"Close",
   meth:"How it works",rep:"Report an error",fb:"Give feedback",copy:"Copy link",copied:"Copied",wa:"Share on WhatsApp",img:"Save as image",recent:"Recent scans",clear:"Clear",
   stxt:"Pool Shield scan: {n} - {v}. Check any Solana token free:",disc:"Not financial advice. A lower score means fewer red flags, not a safe investment.",flags:"Biggest flags",cov:"{a} of {b} checks completed. Grey rows could not be checked.",
   foot:"Reads public Solana data and Dexscreener. A lower score means fewer red flags, not a safe investment. Not financial advice. Independent project by Rudy, cybersecurity student at LAUTECH, built for the Degxifi community."},
  pcm:{lead:"Paste Solana token address. Check the risk before you put your money for the liquidity pool.",ph:"Token address",go:"Check am",busy:"E dey check...",risk:"risk",tip:"Tap any row make you see why e matter.",dex:"See am for Dexscreener",liq:"liquidity",vol:"24h volume",price:"price",mcap:"market cap",unk:"Token wey we no know",
   live:"Live",paused:"Paused",rescan:"Check again now",updated:"Updated {s}s ago",onchain:"Safety checks from {m} min ago",
-  qr:"Scan QR",qrphoto:"Choose a picture",qrshow:"Show QR",qrlink:"Result link",qrtoken:"Token address",qrcap1:"Scan am to open this result for Pool Shield.",qrcap2:"Scan am to read the token address, like with Pool Shield Scan QR.",qrhint:"Point the camera at QR code wey get token address.",qrfail:"We no see Solana token address for that QR code.",qrdenied:"Camera no dey available. Use Choose a picture below.",close:"Close",
+  qr:"Scan QR",qrnone:"We no see QR code for that picture. Try clearer or closer picture.",qrphoto:"Choose a picture",qrshow:"Show QR",qrlink:"Result link",qrtoken:"Token address",qrcap1:"Scan am to open this result for Pool Shield.",qrcap2:"Scan am to read the token address, like with Pool Shield Scan QR.",qrhint:"Point the camera at QR code wey get token address.",qrfail:"We no see Solana token address for that QR code.",qrdenied:"Camera no dey available. Use Choose a picture below.",close:"Close",
   meth:"How e dey work",rep:"Report error",fb:"Tell us wetin you see",copy:"Copy link",copied:"E don copy",wa:"Share for WhatsApp",img:"Save as picture",recent:"Recent checks",clear:"Clear",
   stxt:"Pool Shield check: {n} - {v}. Check any Solana token free:",disc:"No be financial advice. Small score mean small red flags, e no mean say the investment safe.",flags:"Biggest flags",cov:"{a} of {b} checks don finish. Grey rows we no fit check.",
   foot:"We dey read public Solana data and Dexscreener. Small score mean small red flags, e no mean say the investment safe. No be financial advice. Rudy, cybersecurity student for LAUTECH, build am as independent project for the Degxifi community."}
@@ -265,16 +265,17 @@ async function qrStart(){
     },250);
   }catch(e){qrMsg(u.qrdenied)}
 }
-function qrFromFile(f){
-  if(!f)return;
-  const img=new Image(),url=URL.createObjectURL(f);
-  img.onload=async()=>{
-    try{await loadJsQR()}catch(e){out.replaceChildren(el("p",UI[lang].qrfail,"err"));return}
-    const data=await decodeFrom(img,img.naturalWidth,img.naturalHeight);URL.revokeObjectURL(url);
-    if(!(data&&qrUse(data)))out.replaceChildren(el("p",UI[lang].qrfail,"err"));
-  };
-  img.onerror=()=>out.replaceChildren(el("p",UI[lang].qrfail,"err"));
-  img.src=url;
+async function qrFromFile(f){
+  if(!f)return;const u=UI[lang];
+  let bmp=null;
+  try{bmp=await createImageBitmap(f)}catch(e){
+    bmp=await new Promise(res=>{const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>res(im);im.onerror=()=>res(null);im.src=fr.result};fr.onerror=()=>res(null);fr.readAsDataURL(f)});
+  }
+  if(!bmp){out.replaceChildren(el("p",u.qrnone,"err"));return}
+  try{await loadJsQR()}catch(e){}
+  const data=await decodeFrom(bmp,bmp.width||bmp.naturalWidth,bmp.height||bmp.naturalHeight);
+  if(!data){out.replaceChildren(el("p",u.qrnone,"err"));return}
+  if(!qrUse(data))out.replaceChildren(el("p",u.qrfail+" ("+String(data).slice(0,70)+")","err"));
 }
 $("#qr").addEventListener("click",qrStart);
 $("#qrphoto").addEventListener("click",()=>$("#qrfile").click());
