@@ -23,6 +23,8 @@ const ICON={
 UI.en.t1="Free";UI.en.t2="No sign-up";UI.en.t3="Live market data";UI.en.ex="Try an example";UI.en.f1t="Know the risks";UI.en.f1d="See who can mint, freeze or dump before you add liquidity.";UI.en.f2t="Understand why";UI.en.f2d="Tap any row for a plain-language reason, in English or Pidgin.";UI.en.f3t="Share the result";UI.en.f3d="Send a link, a result card, or a QR code that opens this exact scan.";
 UI.pcm.t1="Free";UI.pcm.t2="No sign-up";UI.pcm.t3="Live market data";UI.pcm.ex="Try example";UI.pcm.f1t="Know the risk";UI.pcm.f1d="See who fit print, freeze or dump before you add liquidity.";UI.pcm.f2t="Understand why";UI.pcm.f2d="Tap any row make you see why e matter, for English or Pidgin.";UI.pcm.f3t="Share the result";UI.pcm.f3d="Send link, result picture or QR code wey go open this same check.";
 UI.en.qrup="Upload a QR image";UI.pcm.qrup="Upload QR picture";
+UI.en.agel="Pool age";UI.en.chg="24h change";UI.en.hold="Top holders";UI.en.hw="Wallet";UI.en.hp="Pool";UI.en.hg="Program";UI.en.hb="Burned";UI.en.chk="Checks";UI.en.hnote="Pools, programs and burned tokens are kept apart from wallets. Exchange wallets still show as wallets.";UI.en.hnone="Holder data is not available for this scan.";
+UI.pcm.agel="Pool age";UI.pcm.chg="24h change";UI.pcm.hold="Top holders";UI.pcm.hw="Wallet";UI.pcm.hp="Pool";UI.pcm.hg="Program";UI.pcm.hb="Burned";UI.pcm.chk="Checks";UI.pcm.hnote="Pool, program and burned tokens dey separate from wallets. Exchange wallets go still show as wallets.";UI.pcm.hnone="Holder data no dey available for this check.";
 UI.en.share="Share";UI.en.first="Read this first";UI.en.noflags="No red or amber flags in the checks that ran.";UI.en.qrdl="Download QR";UI.en.bd={ok:"Good",warn:"Watch",bad:"Risk",unknown:"Unknown",info:"Info"};
 UI.pcm.share="Share";UI.pcm.first="Make you read this first";UI.pcm.noflags="No red or amber flag for the checks wey run.";UI.pcm.qrdl="Download QR";UI.pcm.bd={ok:"Good",warn:"Dey careful",bad:"Risk",unknown:"No know",info:"Info"};
 const $=s=>document.querySelector(s), out=$("#out");
@@ -163,14 +165,12 @@ function render(d){
   const open=new Set([...out.querySelectorAll("details[open]")].map(x=>x.dataset.id));
   const strip=el("div",null,"strip");
   d.checks.forEach(c=>{const x=el("div",null,"pad "+c.status);x.title=p?c.labelPcm:c.label;strip.append(x)});
-  const meta=el("p",null,"meta");
-  if(d.pair){
-    const q=d.pair,ch=q.priceChange24h;
-    let t=q.dex+" | "+u.price+" "+price(q.priceUsd);
-    if(ch!=null)t+=" ("+(ch>0?"+":"")+Number(ch).toFixed(1)+"% 24h)";
-    t+=" | "+u.mcap+" "+money(q.marketCap)+" | "+u.liq+" "+money(q.liquidityUsd)+" | "+u.vol+" "+money(q.volume24h)+" ";
-    meta.append(document.createTextNode(t));
-    if(q.url&&q.url.startsWith("https://dexscreener.com/")){const a=el("a",u.dex);a.href=q.url;a.target="_blank";a.rel="noopener noreferrer";meta.append(a)}
+  const q=d.pair,stats=el("div",null,"stats");
+  if(q){
+    const ch=q.priceChange24h,age=q.ageHours;
+    [[u.price,price(q.priceUsd)],[u.chg,ch==null?"n/a":(ch>0?"+":"")+Number(ch).toFixed(1)+"%"],[u.mcap,money(q.marketCap)],[u.liq,money(q.liquidityUsd)],[u.vol,money(q.volume24h)],[u.agel,age==null?"n/a":(age<48?Math.round(age)+" h":Math.round(age/24)+" d")]]
+      .forEach(([k,v])=>{const c=el("div",null,"stat");c.append(el("span",k,"k"),el("b",v,"v"));stats.append(c)});
+    if(q.url&&q.url.startsWith("https://dexscreener.com/")){const l=el("a",u.dex,"statlink");l.href=q.url;l.target="_blank";l.rel="noopener noreferrer";stats.append(l)}
   }
   const ctl=el("div",null,"bar");
   const lb=el("button",null,"live"+(live?" on":""));lb.type="button";lb.setAttribute("aria-pressed",live);
@@ -196,12 +196,20 @@ function render(d){
   });
   const head=(p?d.verdictPcm:d.verdict)+(d.score==null?"":" ("+d.score+"/100 "+u.risk+")");
   const vc=el("section",null,"vcard "+(VCOL[d.verdict]||"unknown"));
-  vc.append(el("h2",head),el("p",d.token?d.token.name+" ("+d.token.symbol+")":u.unk,"tok"),meta,strip);
+  vc.append(el("h2",head),el("p",d.token?d.token.name+" ("+d.token.symbol+")":u.unk,"tok"),el("p",d.pair?d.pair.dex:"","meta"),strip);
   const sev={bad:0,warn:1},flags=d.checks.filter(c=>c.status in sev).sort((x,y)=>sev[x.status]-sev[y.status]).slice(0,3);
   const know=el("div",null,"know");know.append(el("h3",u.first));
   if(flags.length){const ul=el("ul");flags.forEach(c=>{const li=el("li");li.append(el("b",p?c.labelPcm:c.label),document.createTextNode(": "+(p?c.detailPcm:c.detail)));ul.append(li)});know.append(ul)}
   else know.append(el("p",u.noflags));
-  out.replaceChildren(vc,ctl,know,el("p",d.coverage?u.cov.replace("{a}",d.coverage.done).replace("{b}",d.coverage.total):"","tip"),el("p",u.tip,"tip"),list);
+  const hc=el("section",null,"hcard");hc.append(el("h3",u.hold));
+  const hs=(d.holders||[]).filter(x=>x.owner);
+  if(hs.length){
+    const kl={wallet:u.hw,pool:u.hp,program:u.hg,burn:u.hb};
+    hs.forEach((x,n)=>{const r=el("div",null,"hrow");r.append(el("span",String(n+1),"hn"),el("span",kl[x.kind]||x.kind,"hk "+x.kind),el("b",x.pct.toFixed(2)+"%","hv"));
+      const l=el("a",x.owner.slice(0,4)+"..."+x.owner.slice(-4));l.href="https://solscan.io/account/"+x.owner;l.target="_blank";l.rel="noopener noreferrer";r.append(l);hc.append(r)});
+    hc.append(el("p",u.hnote,"tip"));
+  }else hc.append(el("p",u.hnone,"tip"));
+  out.replaceChildren(vc,ctl,stats,know,el("p",d.coverage?u.cov.replace("{a}",d.coverage.done).replace("{b}",d.coverage.total):"","tip"),el("p",u.tip,"tip"),el("h3",u.chk,"eyebrow"),list,hc);
   stamp();
 }
 function schedule(){clearTimeout(timer);if(live&&mint&&!document.hidden)timer=setTimeout(()=>refresh(false),20000)}

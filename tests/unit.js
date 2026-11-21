@@ -122,5 +122,22 @@ async function t(name, fn) { try { await fn(); pass++; console.log("PASS", name)
     mock({ holders: small() }); const r = await scan(MINT);
     assert.ok(r.pair.priceUsd !== undefined && r.scannedAt && r.chainAgeSec >= 0);
   });
+  await t("low trading vs liquidity is flagged but not scored", async () => {
+    mock({ holders: small(), pairs: [pair({ liq: 500000, vol: 5000 })] }); const r = await scan(MINT);
+    assert.strictEqual(get(r, "yield").status, "warn"); assert.strictEqual(r.score, 0);
+  });
+  await t("healthy trading vs liquidity reads ok", async () => { mock({ holders: small() }); const r = await scan(MINT); assert.strictEqual(get(r, "yield").status, "ok"); });
+  await t("extreme trading vs liquidity is flagged", async () => {
+    mock({ holders: small(), pairs: [pair({ liq: 100000, vol: 500000 })] }); const r = await scan(MINT); assert.strictEqual(get(r, "yield").status, "warn");
+  });
+  await t("stablecoin issuers get no volume-vs-liquidity row", async () => {
+    mock({ holders: small() }); const r = await scan("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"); assert.ok(!get(r, "yield"));
+  });
+  await t("top holders list labels pools and wallets", async () => {
+    const w1 = wallet();
+    mock({ holders: [{ pct: 78.8, owner: PDA, nul: true }, { pct: 4, owner: w1 }, { pct: 2, owner: wallet() }] }); const r = await scan(MINT);
+    assert.strictEqual(r.holders[0].kind, "program"); assert.strictEqual(r.holders[1].kind, "wallet");
+    assert.strictEqual(r.holders[1].owner, w1); assert.strictEqual(r.holders[1].pct, 4); assert.ok(r.holders.length <= 10);
+  });
   console.log("\n" + pass + " passed, " + fail + " failed"); process.exit(fail ? 1 : 0);
 })();
