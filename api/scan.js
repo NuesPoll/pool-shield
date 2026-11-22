@@ -13,7 +13,7 @@ module.exports = async (req, res) => {
   if (limited(ip)) return res.status(429).json({ error: "Too many scans from this connection. Wait a minute and try again." });
   const mint = String((req.query && req.query.mint) || "").trim();
   try {
-    const out = await scan(mint, { fresh: req.query && req.query.fresh === "1", quiet: req.query && req.query.live === "1" });
+    const out = await scan(mint, { fresh: req.query && req.query.fresh === "1", quiet: req.query && req.query.live === "1", src: String((req.query && req.query.src) || "").replace(/[^a-z0-9_-]/gi, "").slice(0, 20) });
     res.setHeader("Cache-Control", "no-store");
     res.status(200).json(out);
   } catch (e) {

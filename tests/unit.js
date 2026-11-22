@@ -19,9 +19,10 @@ function mock(s) {
   global.fetch = async (url, opt) => {
     const ok = (b) => ({ ok: true, status: 200, json: async () => b });
     if (String(url).includes("rugcheck")) return s.rug === undefined ? { ok: false, status: 500, json: async () => ({}) } : { ok: true, status: 200, json: async () => s.rug };
+    if (String(url).includes("/pairs/solana/")) return ok(s.pairLookup || { pairs: [] });
     if (String(url).includes("dexscreener")) return ok({ pairs: s.pairs === undefined ? [pair()] : s.pairs });
     const { method, params } = JSON.parse(opt.body); RPC_CALLS++;
-    if (method === "getAccountInfo") return ok({ result: { value: { data: { program: "spl-token", parsed: { type: s.notMint ? "account" : "mint", info: Object.assign({ decimals: 6, supply: "1000000000000000", mintAuthority: null, freezeAuthority: null }, s.mint) } } } } });
+    if (method === "getAccountInfo") return ok({ result: { value: { data: { program: "spl-token", parsed: { type: (s.notMint || (s.notMintAddr && params[0] === s.notMintAddr)) ? "account" : "mint", info: Object.assign({ decimals: 6, supply: "1000000000000000", mintAuthority: null, freezeAuthority: null }, s.mint) } } } } });
     if (method === "getTokenLargestAccounts") {
       if (s.holdersFail) return { ok: false, status: 500, json: async () => ({}) };
       return ok({ result: { value: s.holders.map((h, i) => ({ address: "T" + i, uiAmount: (h.pct / 100) * 1e9 })) } });
@@ -138,6 +139,34 @@ async function t(name, fn) { try { await fn(); pass++; console.log("PASS", name)
     mock({ holders: [{ pct: 78.8, owner: PDA, nul: true }, { pct: 4, owner: w1 }, { pct: 2, owner: wallet() }] }); const r = await scan(MINT);
     assert.strictEqual(r.holders[0].kind, "program"); assert.strictEqual(r.holders[1].kind, "wallet");
     assert.strictEqual(r.holders[1].owner, w1); assert.strictEqual(r.holders[1].pct, 4); assert.ok(r.holders.length <= 10);
+  });
+  await t("zero reported supply gives unknown shares, not a false 0%", async () => {
+    mock({ mint: { supply: "0" }, holders: small() }); const r = await scan(MINT);
+    assert.strictEqual(get(r, "top1").status, "unknown"); assert.ok(!get(r, "top10"));
+    assert.strictEqual(r.holders[0].pct, null); assert.ok(r.holders[0].amount > 0);
+  });
+  await t("market cap is estimated from price and supply when the provider has none", async () => {
+    mock({ holders: small(), pairs: [Object.assign(pair(), { fdv: undefined, marketCap: undefined, priceUsd: "0.5" })] }); const r = await scan(MINT);
+    assert.strictEqual(r.pair.marketCapEstimated, true); assert.strictEqual(r.pair.marketCap, 0.5 * 1e9);
+  });
+  await t("a link containing the token is accepted", async () => {
+    mock({ holders: small() }); const r = await scan("https://pump.fun/coin/" + MINT);
+    assert.strictEqual(r.mint, MINT); assert.strictEqual(r.resolved.kind, "link");
+  });
+  await t("a plain address has no resolution note", async () => { mock({ holders: small() }); const r = await scan(MINT); assert.ok(!r.resolved); });
+  await t("a pool address resolves to the token inside it", async () => {
+    const PAIR = wallet(), TOKEN = wallet();
+    mock({ holders: small(), notMintAddr: PAIR, pairLookup: { pairs: [{ baseToken: { address: TOKEN, name: "T", symbol: "T" }, quoteToken: { address: "So11111111111111111111111111111111111111112", name: "SOL", symbol: "SOL" } }] } });
+    const r = await scan(PAIR); assert.strictEqual(r.mint, TOKEN); assert.strictEqual(r.resolved.kind, "pool");
+  });
+  await t("a pool with SOL as the base token resolves to the other side", async () => {
+    const PAIR = wallet(), TOKEN = wallet();
+    mock({ holders: small(), notMintAddr: PAIR, pairLookup: { pairs: [{ baseToken: { address: "So11111111111111111111111111111111111111112", name: "SOL", symbol: "SOL" }, quoteToken: { address: TOKEN, name: "T", symbol: "T" } }] } });
+    const r = await scan("https://dexscreener.com/solana/" + PAIR); assert.strictEqual(r.mint, TOKEN);
+  });
+  await t("an address that is neither a token nor a known pool is rejected", async () => {
+    const PAIR = wallet(); mock({ holders: small(), notMintAddr: PAIR });
+    await assert.rejects(() => scan(PAIR), /not a token mint/);
   });
   console.log("\n" + pass + " passed, " + fail + " failed"); process.exit(fail ? 1 : 0);
 })();

@@ -1,13 +1,13 @@
 // Paste your Google Form link between the quotes to show a "Give feedback" link in the footer.
-const FEEDBACK_URL="";
+const FEEDBACK_URL="https://forms.gle/wQXN91Dc8dzgRMUU9";
 const UI={
- en:{lead:"Paste a Solana token address. See the risks before you put money in its liquidity pool.",ph:"Token address",go:"Scan token",busy:"Scanning...",risk:"risk",tip:"Tap any row to see why it matters.",dex:"View on Dexscreener",liq:"liquidity",vol:"24h volume",price:"price",mcap:"market cap",unk:"Unknown token",
+ en:{lead:"Paste a Solana token address or a link. See the risks before you put money in its liquidity pool.",ph:"Token address or link",go:"Scan token",busy:"Scanning...",risk:"risk",tip:"Tap any row to see why it matters.",dex:"View on Dexscreener",liq:"liquidity",vol:"24h volume",price:"price",mcap:"market cap",unk:"Unknown token",
   live:"Live",paused:"Paused",rescan:"Re-scan now",updated:"Updated {s}s ago",onchain:"Safety checks from {m} min ago",
   qr:"Scan QR",qrnone:"We could not find a QR code in that picture. Try a sharper, closer photo or a screenshot.",qrphoto:"Choose a photo",qrshow:"Show QR",qrlink:"Result link",qrtoken:"Token address",qrcap1:"Scan this to open this result in Pool Shield.",qrcap2:"Scan this to read the token address, for example with Pool Shield's Scan QR.",qrhint:"Point the camera at a QR code that holds a token address.",qrfail:"No Solana token address found in that QR code.",qrdenied:"Camera not available. Use Choose a photo below instead.",close:"Close",
   meth:"How it works",rep:"Report an error",fb:"Give feedback",copy:"Copy link",copied:"Copied",wa:"Share on WhatsApp",img:"Save as image",recent:"Recent scans",clear:"Clear",
   stxt:"Pool Shield scan: {n} - {v}. Check any Solana token free:",disc:"Not financial advice. A lower score means fewer red flags, not a safe investment.",flags:"Biggest flags",cov:"{a} of {b} checks completed. Grey rows could not be checked.",
   foot:"Reads public Solana data and Dexscreener. A lower score means fewer red flags, not a safe investment. Not financial advice. Independent project by Rudy, cybersecurity student at LAUTECH, built for the Degxifi community."},
- pcm:{lead:"Paste Solana token address. Check the risk before you put your money for the liquidity pool.",ph:"Token address",go:"Check am",busy:"E dey check...",risk:"risk",tip:"Tap any row make you see why e matter.",dex:"See am for Dexscreener",liq:"liquidity",vol:"24h volume",price:"price",mcap:"market cap",unk:"Token wey we no know",
+ pcm:{lead:"Paste Solana token address or link. Check the risk before you put your money for the liquidity pool.",ph:"Token address or link",go:"Check am",busy:"E dey check...",risk:"risk",tip:"Tap any row make you see why e matter.",dex:"See am for Dexscreener",liq:"liquidity",vol:"24h volume",price:"price",mcap:"market cap",unk:"Token wey we no know",
   live:"Live",paused:"Paused",rescan:"Check again now",updated:"Updated {s}s ago",onchain:"Safety checks from {m} min ago",
   qr:"Scan QR",qrnone:"We no see QR code for that picture. Try clearer or closer picture.",qrphoto:"Choose a picture",qrshow:"Show QR",qrlink:"Result link",qrtoken:"Token address",qrcap1:"Scan am to open this result for Pool Shield.",qrcap2:"Scan am to read the token address, like with Pool Shield Scan QR.",qrhint:"Point the camera at QR code wey get token address.",qrfail:"We no see Solana token address for that QR code.",qrdenied:"Camera no dey available. Use Choose a picture below.",close:"Close",
   meth:"How e dey work",rep:"Report error",fb:"Tell us wetin you see",copy:"Copy link",copied:"E don copy",wa:"Share for WhatsApp",img:"Save as picture",recent:"Recent checks",clear:"Clear",
@@ -25,13 +25,18 @@ UI.pcm.t1="Free";UI.pcm.t2="No sign-up";UI.pcm.t3="Live market data";UI.pcm.ex="
 UI.en.qrup="Upload a QR image";UI.pcm.qrup="Upload QR picture";
 UI.en.agel="Pool age";UI.en.chg="24h change";UI.en.hold="Top holders";UI.en.hw="Wallet";UI.en.hp="Pool";UI.en.hg="Program";UI.en.hb="Burned";UI.en.chk="Checks";UI.en.hnote="Pools, programs and burned tokens are kept apart from wallets. Exchange wallets still show as wallets.";UI.en.hnone="Holder data is not available for this scan.";
 UI.pcm.agel="Pool age";UI.pcm.chg="24h change";UI.pcm.hold="Top holders";UI.pcm.hw="Wallet";UI.pcm.hp="Pool";UI.pcm.hg="Program";UI.pcm.hb="Burned";UI.pcm.chk="Checks";UI.pcm.hnote="Pool, program and burned tokens dey separate from wallets. Exchange wallets go still show as wallets.";UI.pcm.hnone="Holder data no dey available for this check.";
+UI.en.nr="Not reported";UI.pcm.nr="E no dey reported";
+UI.en.priv="Privacy";UI.en.rlink="Showing the token from your link.";UI.en.rpool="That looks like a pool address, so this is the token inside it.";
+UI.pcm.priv="Privacy";UI.pcm.rlink="We dey show the token from your link.";UI.pcm.rpool="That one look like pool address, so this na the token wey dey inside am.";
 UI.en.share="Share";UI.en.first="Read this first";UI.en.noflags="No red or amber flags in the checks that ran.";UI.en.qrdl="Download QR";UI.en.bd={ok:"Good",warn:"Watch",bad:"Risk",unknown:"Unknown",info:"Info"};
 UI.pcm.share="Share";UI.pcm.first="Make you read this first";UI.pcm.noflags="No red or amber flag for the checks wey run.";UI.pcm.qrdl="Download QR";UI.pcm.bd={ok:"Good",warn:"Dey careful",bad:"Risk",unknown:"No know",info:"Info"};
 const $=s=>document.querySelector(s), out=$("#out");
+const SRC=(new URLSearchParams(location.search).get("src")||"").replace(/[^a-z0-9_-]/gi,"").slice(0,20);
 let lang="en", last=null, live=true, mint="", timer=null, reqId=0;
 try{lang=localStorage.getItem("lang")==="pcm"?"pcm":"en"}catch(e){}
 function el(tag,text,cls){const n=document.createElement(tag);if(text!=null)n.textContent=text;if(cls)n.className=cls;return n}
 function money(n){if(n==null||isNaN(n))return"n/a";n=Number(n);const a=Math.abs(n);if(a>=1e9)return"$"+(n/1e9).toFixed(2)+"B";if(a>=1e6)return"$"+(n/1e6).toFixed(2)+"M";if(a>=1e3)return"$"+(n/1e3).toFixed(1)+"K";return"$"+Math.round(n).toLocaleString()}
+function amt(n){if(n==null||isNaN(n))return"n/a";n=Number(n);const a=Math.abs(n);if(a>=1e9)return(n/1e9).toFixed(2)+"B";if(a>=1e6)return(n/1e6).toFixed(2)+"M";if(a>=1e3)return(n/1e3).toFixed(1)+"K";return n.toLocaleString(undefined,{maximumFractionDigits:2})}
 function price(n){if(n==null||isNaN(n))return"n/a";n=Number(n);if(n>=1)return"$"+n.toLocaleString(undefined,{maximumFractionDigits:2});if(n>=0.01)return"$"+n.toFixed(4);return"$"+n.toPrecision(3)}
 
 // ---- recent scans (stored only in this browser)
@@ -145,7 +150,7 @@ async function saveImage(){
 }
 function chrome(){
   const u=UI[lang];
-  $("#lead").textContent=u.lead;$("#mint").placeholder=u.ph;$("#go").textContent=u.go;$("#foot").textContent=u.foot;$("#lm").textContent=u.meth;$("#lr").textContent=u.rep;
+  $("#lead").textContent=u.lead;$("#mint").placeholder=u.ph;$("#go").textContent=u.go;$("#foot").textContent=u.foot;$("#lm").textContent=u.meth;$("#lp").textContent=u.priv;$("#lr").textContent=u.rep;
   if(FEEDBACK_URL){const a=$("#lf");a.textContent=u.fb;a.href=FEEDBACK_URL;$("#fbwrap").hidden=false}
   renderRecent();
   ["t1","t2","t3","f1t","f1d","f2t","f2d","f3t","f3d"].forEach(k=>{$("#"+k).textContent=u[k]});renderExamples();
@@ -168,7 +173,7 @@ function render(d){
   const q=d.pair,stats=el("div",null,"stats");
   if(q){
     const ch=q.priceChange24h,age=q.ageHours;
-    [[u.price,price(q.priceUsd)],[u.chg,ch==null?"n/a":(ch>0?"+":"")+Number(ch).toFixed(1)+"%"],[u.mcap,money(q.marketCap)],[u.liq,money(q.liquidityUsd)],[u.vol,money(q.volume24h)],[u.agel,age==null?"n/a":(age<48?Math.round(age)+" h":Math.round(age/24)+" d")]]
+    [[u.price,price(q.priceUsd)],[u.chg,ch==null?"n/a":(ch>0?"+":"")+Number(ch).toFixed(1)+"%"],[u.mcap,q.marketCap==null?u.nr:(q.marketCapEstimated?"~":"")+money(q.marketCap)],[u.liq,money(q.liquidityUsd)],[u.vol,money(q.volume24h)],[u.agel,age==null?"n/a":(age<48?Math.round(age)+" h":Math.round(age/24)+" d")]]
       .forEach(([k,v])=>{const c=el("div",null,"stat");c.append(el("span",k,"k"),el("b",v,"v"));stats.append(c)});
     if(q.url&&q.url.startsWith("https://dexscreener.com/")){const l=el("a",u.dex,"statlink");l.href=q.url;l.target="_blank";l.rel="noopener noreferrer";stats.append(l)}
   }
@@ -205,11 +210,11 @@ function render(d){
   const hs=(d.holders||[]).filter(x=>x.owner);
   if(hs.length){
     const kl={wallet:u.hw,pool:u.hp,program:u.hg,burn:u.hb};
-    hs.forEach((x,n)=>{const r=el("div",null,"hrow");r.append(el("span",String(n+1),"hn"),el("span",kl[x.kind]||x.kind,"hk "+x.kind),el("b",x.pct.toFixed(2)+"%","hv"));
+    hs.forEach((x,n)=>{const r=el("div",null,"hrow");r.append(el("span",String(n+1),"hn"),el("span",kl[x.kind]||x.kind,"hk "+x.kind),el("b",x.pct==null?amt(x.amount):x.pct.toFixed(2)+"%","hv"));
       const l=el("a",x.owner.slice(0,4)+"..."+x.owner.slice(-4));l.href="https://solscan.io/account/"+x.owner;l.target="_blank";l.rel="noopener noreferrer";r.append(l);hc.append(r)});
     hc.append(el("p",u.hnote,"tip"));
   }else hc.append(el("p",u.hnone,"tip"));
-  out.replaceChildren(vc,ctl,stats,know,el("p",d.coverage?u.cov.replace("{a}",d.coverage.done).replace("{b}",d.coverage.total):"","tip"),el("p",u.tip,"tip"),el("h3",u.chk,"eyebrow"),list,hc);
+  out.replaceChildren(vc,...(d.resolved?[el("p",d.resolved.kind==="pool"?u.rpool:u.rlink,"tip")]:[]),ctl,stats,know,el("p",d.coverage?u.cov.replace("{a}",d.coverage.done).replace("{b}",d.coverage.total):"","tip"),el("p",u.tip,"tip"),el("h3",u.chk,"eyebrow"),list,hc);
   stamp();
 }
 function schedule(){clearTimeout(timer);if(live&&mint&&!document.hidden)timer=setTimeout(()=>refresh(false),20000)}
@@ -227,10 +232,10 @@ async function run(m){
   mint=m;clearTimeout(timer);const id=++reqId;
   out.replaceChildren(el("p",UI[lang].busy,"muted"));
   try{
-    const r=await fetch("/api/scan?mint="+encodeURIComponent(m),{cache:"no-store"});const d=await r.json();
+    const r=await fetch("/api/scan?mint="+encodeURIComponent(m)+(SRC?"&src="+encodeURIComponent(SRC):""),{cache:"no-store"});const d=await r.json();
     if(id!==reqId)return;
     if(!r.ok)throw new Error(d.error||"Scan failed");
-    last=d;render(d);addRecent(d);schedule();
+    last=d;mint=d.mint;$("#mint").value=d.mint;history.replaceState(null,"","?mint="+encodeURIComponent(d.mint)+(SRC?"&src="+encodeURIComponent(SRC):""));render(d);addRecent(d);schedule();
   }catch(e){last=null;mint="";out.replaceChildren(el("p",e.message,"err"))}
 }
 function setLang(l){lang=l;try{localStorage.setItem("lang",l)}catch(e){}chrome();if(last)render(last)}

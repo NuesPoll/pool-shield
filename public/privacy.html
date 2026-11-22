@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pool Shield privacy</title>
+<meta name="description" content="What Pool Shield collects, what stays on your device, and which outside services see a token address.">
+<meta name="theme-color" content="#0A3D62">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--tile:#F2F9F8;--deep:#0A3D62;--aqua:#1496A6;--line:#CFE5E3}
+*{box-sizing:border-box}
+body{margin:0;background:var(--tile);color:var(--deep);font-family:"Familjen Grotesk",system-ui,sans-serif;line-height:1.55}
+main{max-width:720px;margin:0 auto;padding:32px 20px 64px}
+a{color:var(--aqua)}h1{font-size:2.2rem;line-height:1.1;margin:8px 0}h2{font-size:1.25rem;margin:30px 0 8px}
+.lead{font-size:1.1rem;max-width:56ch}li{margin:6px 0}
+</style>
+</head>
+<body>
+<main>
+<p><a href="/">Back to Pool Shield</a></p>
+<h1>Privacy</h1>
+<p class="lead">Pool Shield has no accounts, no wallet connection and no sign-up. This page says plainly what it does collect.</p>
+
+<h2>What is collected</h2>
+<ul>
+<li><b>The token addresses that are scanned.</b> They appear in the site's server logs, with a score and verdict, so I can count usage. They are not linked to your name.</li>
+<li><b>Anonymous visit counts</b> from Vercel Web Analytics.</li>
+<li><b>An optional group tag.</b> If a link ends in <code>?src=something</code>, that tag is logged so I can see which group a visit came from.</li>
+</ul>
+
+<h2>What stays on your device</h2>
+<ul>
+<li>Your language choice and your recent scans are saved in your own browser only. The Clear button removes the scans.</li>
+<li>QR photos you choose are read in your browser and are not uploaded.</li>
+<li>The camera is used only when you tap Scan QR, and only to read a QR code.</li>
+</ul>
+
+<h2>Outside services that see a token address</h2>
+<p>To work, Pool Shield sends the token address to a Solana node provider, to Dexscreener, and to RugCheck. They do not receive your name or device details from Pool Shield. Their own policies apply to what they log.</p>
+
+<h2>The feedback form</h2>
+<p>The feedback form runs on Google Forms. It asks for a first name or nickname, which is optional, and Google's policy applies. Answers are quoted in reports only with permission, and only by first name.</p>
+
+<h2>Questions or removal</h2>
+<p>To ask a question or request removal of feedback you submitted, <a href="https://github.com/NuesPoll/pool-shield/issues" target="_blank" rel="noopener noreferrer">open an issue</a>. Pool Shield is an independent student project and is not financial advice.</p>
+</main>
+</body>
+</html>

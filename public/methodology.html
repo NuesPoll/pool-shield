@@ -6,6 +6,7 @@
 <title>How Pool Shield works</title>
 <meta name="description" content="Every check Pool Shield runs, where the data comes from, how the score works, and what it cannot see.">
 <meta name="theme-color" content="#0A3D62">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -29,7 +30,7 @@ small,.mute{color:var(--mute)}
 <main>
 <p><a href="/">Back to Pool Shield</a></p>
 <h1>How Pool Shield works</h1>
-<p class="lead">Pool Shield reads public Solana data and shows the warning signs a liquidity provider should understand before adding money to a pool. It is a learning tool, not a verdict. Version 2.3.</p>
+<p class="lead">Pool Shield reads public Solana data and shows the warning signs a liquidity provider should understand before adding money to a pool. It is a learning tool, not a verdict. Version 2.4.</p>
 
 <h2>Where the data comes from</h2>
 <ul>
@@ -38,6 +39,9 @@ small,.mute{color:var(--mute)}
 <li><b>RugCheck</b>: how much of the pool's LP tokens are locked or burned.</li>
 </ul>
 <p>Nothing is stored about the people who use the tool beyond anonymous visit counts and the token address that was scanned. The "Recent scans" list is kept only in your own browser.</p>
+
+<h2>What you can paste</h2>
+<p>A token address, or a link from pump.fun, Dexscreener, Solscan or Meteora. If you paste a pool address, Pool Shield asks Dexscreener which token is in the pool and shows that token instead, and says so on the page.</p>
 
 <h2>The checks</h2>
 <div class="tablewrap"><table>
