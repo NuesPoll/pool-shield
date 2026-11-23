@@ -9,6 +9,5 @@ window.POOL_SHIELD_FIREBASE_CONFIG = Object.freeze({
   appId: "1:419558055380:web:198c65d959b88fcb790a41",
   measurementId: "G-9HTW2Z6GLF"
 });
-// Set this to the PUBLIC Fraud Defense/reCAPTCHA Enterprise site key from App Check.
-// It is NOT the Firebase apiKey above.
-window.POOL_SHIELD_APP_CHECK_SITE_KEY = "";
+// Public Fraud Defense (reCAPTCHA Enterprise) site key, not an admin secret.
+window.POOL_SHIELD_APP_CHECK_SITE_KEY = "6Lem7C4uAAAAAP-136M-m-ypauJHaarhoG6By2mQ";
