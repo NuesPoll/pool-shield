@@ -235,8 +235,8 @@ async function run(m){
     const r=await fetch("/api/scan?mint="+encodeURIComponent(m)+(SRC?"&src="+encodeURIComponent(SRC):""),{cache:"no-store"});const d=await r.json();
     if(id!==reqId)return;
     if(!r.ok)throw new Error(d.error||"Scan failed");
-    last=d;mint=d.mint;$("#mint").value=d.mint;history.replaceState(null,"","?mint="+encodeURIComponent(d.mint)+(SRC?"&src="+encodeURIComponent(SRC):""));render(d);addRecent(d);schedule();
-  }catch(e){last=null;mint="";out.replaceChildren(el("p",e.message,"err"))}
+    last=d;mint=d.mint;$("#mint").value=d.mint;history.replaceState(null,"","?mint="+encodeURIComponent(d.mint)+(SRC?"&src="+encodeURIComponent(SRC):""));render(d);document.dispatchEvent(new CustomEvent("pool-shield:scan",{detail:d}));addRecent(d);schedule();
+  }catch(e){last=null;mint="";document.dispatchEvent(new CustomEvent("pool-shield:scan",{detail:null}));out.replaceChildren(el("p",e.message,"err"))}
 }
 function setLang(l){lang=l;try{localStorage.setItem("lang",l)}catch(e){}chrome();if(last)render(last)}
 $("#en").addEventListener("click",()=>setLang("en"));$("#pcm").addEventListener("click",()=>setLang("pcm"));
