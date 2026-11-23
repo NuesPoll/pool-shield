@@ -214,7 +214,7 @@ function render(d){
       const l=el("a",x.owner.slice(0,4)+"..."+x.owner.slice(-4));l.href="https://solscan.io/account/"+x.owner;l.target="_blank";l.rel="noopener noreferrer";r.append(l);hc.append(r)});
     hc.append(el("p",u.hnote,"tip"));
   }else hc.append(el("p",u.hnone,"tip"));
-  out.replaceChildren(vc,...(d.resolved?[el("p",d.resolved.kind==="pool"?u.rpool:u.rlink,"tip")]:[]),ctl,stats,know,el("p",d.coverage?u.cov.replace("{a}",d.coverage.done).replace("{b}",d.coverage.total):"","tip"),el("p",u.tip,"tip"),el("h3",u.chk,"eyebrow"),list,hc);
+  out.replaceChildren(vc,...(d.resolved?[el("p",d.resolved.kind==="pool"?u.rpool:u.rlink,"tip")]:[]),ctl,stats,know,document.getElementById("ai-panel"),el("p",d.coverage?u.cov.replace("{a}",d.coverage.done).replace("{b}",d.coverage.total):"","tip"),el("p",u.tip,"tip"),el("h3",u.chk,"eyebrow"),list,hc);
   stamp();
 }
 function schedule(){clearTimeout(timer);if(live&&mint&&!document.hidden)timer=setTimeout(()=>refresh(false),20000)}
