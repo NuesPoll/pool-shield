@@ -62,6 +62,7 @@ module.exports = async (req, res) => {
   } catch (e) {
     if (e.code === "NOT_MINT" || /not a token mint/i.test(String(e.message))) return res.status(400).json({ error: "This address is not a token mint. Paste the token address, or a link to the token." });
     if (/valid Solana/i.test(String(e.message))) return res.status(400).json({ error: "Enter a valid Solana token address or link." });
+    console.warn(JSON.stringify({ event: "scan_unavailable", category: e.name === "TimeoutError" ? "timeout" : "service_failure" }));
     return res.status(503).json({ error: "Scan service temporarily unavailable. Please try again." });
   }
 };
