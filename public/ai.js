@@ -65,7 +65,6 @@ button.addEventListener("click", async () => {
   source.textContent = "";
   status.textContent = "Preparing AI explanation…";
   const version = scanVersion;
-  const started = performance.now();
   let generating = true;
   try {
     status.textContent = "Generating security explanation…";
@@ -102,7 +101,7 @@ button.addEventListener("click", async () => {
     const inferenceSource = result.response.inferenceSource;
     source.textContent = inferenceSource === "ON_DEVICE" ? "Generated on this device" :
       inferenceSource === "IN_CLOUD" ? "Generated in cloud" : "Inference source unavailable";
-    status.textContent = "AI explanation (not a security guarantee). Generated in " + ((performance.now() - started) / 1000).toFixed(1) + " seconds.";
+    status.textContent = "AI explanation (not a security guarantee).";
   } catch (error) {
     if (version === scanVersion) {
       const message = String(error?.message || "Please retry.");
