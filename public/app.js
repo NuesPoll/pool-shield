@@ -168,6 +168,40 @@ function stamp(){
   if(last.chainAgeSec>=60)t+=" | "+u.onchain.replace("{m}",Math.round(last.chainAgeSec/60));
   n.textContent=t;
 }
+
+// Print a local snapshot; the browser can save it as PDF without uploading evidence.
+function printReport(data,full){
+  const p=lang==="pcm", t=(en,pcm)=>p?pcm:en, u=UI[lang];
+  const report=el("section",null,"print-report");
+  report.lang=p?"pcm":"en";
+  const add=(tag,value)=>report.append(el(tag,value));
+  add("h1","Pool Shield — Beyond the scan.");
+  add("h2",full?t("Technical report","Full technical report"):t("Security summary","Security summary"));
+  add("p",t("Token: ","Token: ")+(data.token?data.token.name+" ("+data.token.symbol+")":u.unk));
+  add("p",data.mint);
+  add("p",t("Scan timestamp: ","Time we check: ")+String(data.scannedAt||u.nr));
+  add("h2",(p?data.verdictPcm:data.verdict)+(data.score==null?"":" — "+data.score+"/100 "+u.risk));
+  add("p",u.disc);
+  if(data.coverage)add("p",u.cov.replace("{a}",data.coverage.done).replace("{b}",data.coverage.total));
+  add("h3",u.chk);
+  const checks=data.checks||[];
+  const selected=full?checks:checks.filter(c=>["bad","warn","unknown"].includes(c.status));
+  if(!selected.length)add("p",u.noflags);
+  selected.forEach(c=>{add("p",(p?c.labelPcm:c.label)+" — "+(u.bd[c.status]||c.status)+": "+(p?c.detailPcm:c.detail));if(full)add("p",p?c.whyPcm:c.why)});
+  add("h3",u.hold);
+  const holders=(data.holders||[]).filter(x=>x.owner).slice(0,10);
+  if(!holders.length)add("p",u.hnone);
+  holders.forEach((x,i)=>{const line=el("div",null,"print-holder");line.append(el("span","#"+(i+1)+" "+(full?x.owner:x.owner.slice(0,4)+"…"+x.owner.slice(-4))+" · "+(x.kind||u.nr)+" · "+(Number.isFinite(x.pct)?x.pct.toFixed(2)+"%":u.nr)));if(Number.isFinite(x.pct)&&x.pct>=0&&x.pct<=100){const bar=document.createElement("progress");bar.max=100;bar.value=x.pct;line.append(bar)}report.append(line)});
+  add("p",u.hnote);
+  if(full&&data.pair){add("h3",t("Market context","Market information"));add("p",u.liq+": "+money(data.pair.liquidityUsd));add("p",u.agel+": "+(data.pair.ageHours??u.nr)+" h");}
+  add("p",t("Sources: public Solana RPC; market and lock information may come from Dexscreener and RugCheck. Third-party lock claims are not independently verified. This is a snapshot, not a live report.","Sources: public Solana RPC; market and lock information fit come from Dexscreener and RugCheck. We no independently confirm lock claims. Na saved report, no be live check."));
+  document.querySelector(".print-report")?.remove();
+  document.body.append(report);
+  const cleanup=()=>report.remove();
+  window.addEventListener("afterprint",cleanup,{once:true});
+  try{window.print()}finally{cleanup();window.removeEventListener("afterprint",cleanup)}
+}
+
 function render(d){
   const u=UI[lang],p=lang==="pcm";
   const open=new Set([...out.querySelectorAll("details[open]")].map(x=>x.dataset.id));
@@ -188,7 +222,7 @@ function render(d){
   const st=el("span",null,"stampline");st.id="stamp";
   const sb=el("button",null,"btn ghost");sb.type="button";sb.innerHTML=ICON.share;sb.append(document.createTextNode(u.share));
   const menu=el("div",null,"menu");menu.hidden=true;
-  [[u.copy,copyLink],[u.wa,whatsapp],[u.img,saveImage],[u.qrshow,showQr]].forEach(([t,f])=>{const m=el("button",t,"mi");m.type="button";m.onclick=()=>{menu.hidden=true;f(m)};menu.append(m)});
+  [[u.copy,copyLink],[u.wa,whatsapp],[u.img,saveImage],[u.qrshow,showQr],[p?"Save summary PDF":"Save summary PDF",()=>printReport(d,false)],[p?"Save full report PDF":"Save technical PDF",()=>printReport(d,true)]].forEach(([t,f])=>{const m=el("button",t,"mi");m.type="button";m.onclick=()=>{menu.hidden=true;f(m)};menu.append(m)});
   sb.onclick=e=>{e.stopPropagation();menu.hidden=!menu.hidden};
   const shw=el("div",null,"shw");shw.append(sb,menu);
   const dq=el("button",null,"btn ghost");dq.type="button";dq.innerHTML=ICON.qr;dq.append(document.createTextNode(u.qrdl));dq.onclick=quickQr;
