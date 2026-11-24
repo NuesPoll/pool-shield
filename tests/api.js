@@ -40,5 +40,15 @@ async function request(method, query, ip = "127.0.0.1") {
   r=await request("GET",{mint:"example"},"127.0.0.5"); assert.equal(r.code,503); assert.ok(!JSON.stringify(r.body).includes("private redis diagnostic"));
   delete process.env.UPSTASH_REDIS_REST_URL;
   delete process.env.UPSTASH_REDIS_REST_TOKEN;
+  process.env.KV_REST_API_URL="https://redis.example.invalid";
+  process.env.KV_REST_API_TOKEN="mock-only";
+  global.fetch=async(url,options)=>{
+    assert.equal(url,process.env.KV_REST_API_URL);
+    assert.equal(options.headers.Authorization,"Bearer mock-only");
+    return {ok:true,json:async()=>({result:1})};
+  };
+  r=await request("GET",{mint:"example"},"127.0.0.6"); assert.equal(r.code,200);
+  delete process.env.KV_REST_API_URL;
+  delete process.env.KV_REST_API_TOKEN;
   console.log("API regression checks passed");
 })().catch(e=>{console.error(e);process.exitCode=1;});
