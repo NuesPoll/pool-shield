@@ -1,3 +1,4 @@
+const aiPanel = document.getElementById("ai-panel");
 // Paste your Google Form link between the quotes to show a "Give feedback" link in the footer.
 const FEEDBACK_URL="https://forms.gle/wQXN91Dc8dzgRMUU9";
 const UI={
@@ -214,7 +215,7 @@ function render(d){
       const l=el("a",x.owner.slice(0,4)+"..."+x.owner.slice(-4));l.href="https://solscan.io/account/"+x.owner;l.target="_blank";l.rel="noopener noreferrer";r.append(l);hc.append(r)});
     hc.append(el("p",u.hnote,"tip"));
   }else hc.append(el("p",u.hnone,"tip"));
-  out.replaceChildren(vc,...(d.resolved?[el("p",d.resolved.kind==="pool"?u.rpool:u.rlink,"tip")]:[]),ctl,stats,know,document.getElementById("ai-panel"),el("p",d.coverage?u.cov.replace("{a}",d.coverage.done).replace("{b}",d.coverage.total):"","tip"),el("p",u.tip,"tip"),el("h3",u.chk,"eyebrow"),list,hc);
+  out.replaceChildren(vc,...(d.resolved?[el("p",d.resolved.kind==="pool"?u.rpool:u.rlink,"tip")]:[]),ctl,stats,know,aiPanel,el("p",d.coverage?u.cov.replace("{a}",d.coverage.done).replace("{b}",d.coverage.total):"","tip"),el("p",u.tip,"tip"),el("h3",u.chk,"eyebrow"),list,hc);
   stamp();
 }
 function schedule(){clearTimeout(timer);if(live&&mint&&!document.hidden)timer=setTimeout(()=>refresh(false),20000)}
@@ -230,13 +231,14 @@ async function refresh(fresh){
 }
 async function run(m){
   mint=m;clearTimeout(timer);const id=++reqId;
+  document.dispatchEvent(new CustomEvent("pool-shield:scan",{detail:null}));
   out.replaceChildren(el("p",UI[lang].busy,"muted"));
   try{
     const r=await fetch("/api/scan?mint="+encodeURIComponent(m)+(SRC?"&src="+encodeURIComponent(SRC):""),{cache:"no-store"});const d=await r.json();
     if(id!==reqId)return;
     if(!r.ok)throw new Error(d.error||"Scan failed");
     last=d;mint=d.mint;$("#mint").value=d.mint;history.replaceState(null,"","?mint="+encodeURIComponent(d.mint)+(SRC?"&src="+encodeURIComponent(SRC):""));render(d);document.dispatchEvent(new CustomEvent("pool-shield:scan",{detail:d}));addRecent(d);schedule();
-  }catch(e){last=null;mint="";document.dispatchEvent(new CustomEvent("pool-shield:scan",{detail:null}));out.replaceChildren(el("p",e.message,"err"))}
+  }catch(e){if(id!==reqId)return;last=null;mint="";document.dispatchEvent(new CustomEvent("pool-shield:scan",{detail:null}));out.replaceChildren(el("p",e.message,"err"))}
 }
 function setLang(l){lang=l;try{localStorage.setItem("lang",l)}catch(e){}chrome();if(last)render(last)}
 $("#en").addEventListener("click",()=>setLang("en"));$("#pcm").addEventListener("click",()=>setLang("pcm"));
