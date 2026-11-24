@@ -129,6 +129,14 @@ button:active{transform:translateY(1px)}
 .hk{padding:1px 8px;border-radius:999px;font-size:.75rem;font-weight:700;color:#fff;background:var(--deep)}
 .hk.pool,.hk.program{background:var(--aqua)}.hk.burn{background:var(--unk)}
 .hrow a{color:var(--aqua);margin-left:auto;font-family:ui-monospace,Consolas,monospace;font-size:.85rem}
+/* Keep intrinsic widths from expanding the mobile viewport. */
+main,#out,.field,.field input,details,.stat,.hcard,.vcard,.know,.rows{min-width:0;max-width:100%}
+main{width:100%;overflow-wrap:anywhere}
+.stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(min-width:560px){.stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.row details,.hrow>*{min-width:0}
+pre{white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:559px){main{padding:20px 14px 40px}.field{flex-basis:100%}.field input{width:100%}.stat{padding:10px}.hrow{flex-wrap:wrap}.shw{margin-left:0}}
 </style>
 </head>
 <body>
@@ -147,10 +155,20 @@ button:active{transform:translateY(1px)}
 <div id="examples" class="recent"></div>
 <div id="qrout" class="qrbox" hidden><div class="qrin"><div id="qrcv"></div><p id="qrcap"></p><div class="ctl" style="justify-content:center"><button type="button" id="qrt1" class="mini"></button><button type="button" id="qrt2" class="mini"></button><button type="button" id="qrdl" class="btn"></button><button type="button" id="qrx" class="btn ghost"></button></div></div></div>
 <div id="out" aria-live="polite"></div>
+<section id="ai-panel" class="hcard" hidden aria-labelledby="ai-heading">
+  <h3 id="ai-heading">AI risk explanation · Hybrid AI</h3>
+  <p class="muted">Optional explanation of the scanner's evidence. AI cannot verify a token's safety or liquidity lock.</p>
+  <button type="button" id="ai-explain" class="btn">Explain this scan with AI</button>
+  <p id="ai-status" class="muted" role="status"></p>
+  <p id="ai-answer" style="white-space:pre-wrap"></p>
+  <p id="ai-source" class="muted"></p>
+</section>
 <section id="features" class="tiles"><div><h3 id="f1t"></h3><p id="f1d"></p></div><div><h3 id="f2t"></h3><p id="f2d"></p></div><div><h3 id="f3t"></h3><p id="f3d"></p></div></section>
 <footer><p id="foot"></p><p><a id="lm" href="/methodology"></a> | <a id="lp" href="/privacy"></a> | <a id="lr" href="https://github.com/NuesPoll/pool-shield/issues" target="_blank" rel="noopener noreferrer"></a><span id="fbwrap" hidden> | <a id="lf" target="_blank" rel="noopener noreferrer"></a></span></p></footer>
 </main>
 <script defer src="/_vercel/insights/script.js"></script>
+<script defer src="/firebase-config.js"></script>
 <script defer src="/app.js"></script>
+<script type="module" src="/ai.js"></script>
 </body>
 </html>

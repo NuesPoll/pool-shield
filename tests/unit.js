@@ -20,7 +20,7 @@ function mock(s) {
     const ok = (b) => ({ ok: true, status: 200, json: async () => b });
     if (String(url).includes("rugcheck")) return s.rug === undefined ? { ok: false, status: 500, json: async () => ({}) } : { ok: true, status: 200, json: async () => s.rug };
     if (String(url).includes("/pairs/solana/")) return ok(s.pairLookup || { pairs: [] });
-    if (String(url).includes("dexscreener")) return ok({ pairs: s.pairs === undefined ? [pair()] : s.pairs });
+    if (String(url).includes("dexscreener")) { if (s.marketFail) return {ok:false,status:503,json:async()=>({})}; if (s.marketMalformed) return ok({}); return ok({ pairs: s.pairs === undefined ? [pair()] : s.pairs }); }
     const { method, params } = JSON.parse(opt.body); RPC_CALLS++;
     if (method === "getAccountInfo") return ok({ result: { value: { data: { program: "spl-token", parsed: { type: (s.notMint || (s.notMintAddr && params[0] === s.notMintAddr)) ? "account" : "mint", info: Object.assign({ decimals: 6, supply: "1000000000000000", mintAuthority: null, freezeAuthority: null }, s.mint) } } } } });
     if (method === "getTokenLargestAccounts") {
@@ -72,6 +72,14 @@ async function t(name, fn) { try { await fn(); pass++; console.log("PASS", name)
   await t("no trading pool is flagged", async () => {
     mock({ holders: small(), pairs: [] }); const r = await scan(MINT);
     assert.strictEqual(get(r, "pool").status, "bad"); assert.ok(r.score >= 30);
+  });
+  await t("market failure or malformed response gives incomplete evidence", async () => {
+    for (const mode of ["marketFail","marketMalformed"]) {
+      mock({ holders: small(), [mode]: true }); const r = await scan(MINT);
+      assert.strictEqual(get(r,"pool").status,"unknown");
+      assert.strictEqual(get(r,"lock").status,"unknown");
+      assert.strictEqual(r.verdict,"Incomplete scan");
+    }
   });
   await t("bonding-curve pool with no reported liquidity is unknown, not bad", async () => {
     mock({ holders: small(), pairs: [pair({ dex: "meteoradbc", liq: 0, vol: 0.11 })] }); const r = await scan(MINT);

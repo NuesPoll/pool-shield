@@ -1,3 +1,4 @@
+const aiPanel = document.getElementById("ai-panel");
 // Paste your Google Form link between the quotes to show a "Give feedback" link in the footer.
 const FEEDBACK_URL="https://forms.gle/wQXN91Dc8dzgRMUU9";
 const UI={
@@ -214,7 +215,7 @@ function render(d){
       const l=el("a",x.owner.slice(0,4)+"..."+x.owner.slice(-4));l.href="https://solscan.io/account/"+x.owner;l.target="_blank";l.rel="noopener noreferrer";r.append(l);hc.append(r)});
     hc.append(el("p",u.hnote,"tip"));
   }else hc.append(el("p",u.hnone,"tip"));
-  out.replaceChildren(vc,...(d.resolved?[el("p",d.resolved.kind==="pool"?u.rpool:u.rlink,"tip")]:[]),ctl,stats,know,el("p",d.coverage?u.cov.replace("{a}",d.coverage.done).replace("{b}",d.coverage.total):"","tip"),el("p",u.tip,"tip"),el("h3",u.chk,"eyebrow"),list,hc);
+  out.replaceChildren(vc,...(d.resolved?[el("p",d.resolved.kind==="pool"?u.rpool:u.rlink,"tip")]:[]),ctl,stats,know,aiPanel,el("p",d.coverage?u.cov.replace("{a}",d.coverage.done).replace("{b}",d.coverage.total):"","tip"),el("p",u.tip,"tip"),el("h3",u.chk,"eyebrow"),list,hc);
   stamp();
 }
 function schedule(){clearTimeout(timer);if(live&&mint&&!document.hidden)timer=setTimeout(()=>refresh(false),20000)}
@@ -230,15 +231,23 @@ async function refresh(fresh){
 }
 async function run(m){
   mint=m;clearTimeout(timer);const id=++reqId;
+  document.dispatchEvent(new CustomEvent("pool-shield:scan",{detail:null}));
   out.replaceChildren(el("p",UI[lang].busy,"muted"));
   try{
     const r=await fetch("/api/scan?mint="+encodeURIComponent(m)+(SRC?"&src="+encodeURIComponent(SRC):""),{cache:"no-store"});const d=await r.json();
     if(id!==reqId)return;
     if(!r.ok)throw new Error(d.error||"Scan failed");
-    last=d;mint=d.mint;$("#mint").value=d.mint;history.replaceState(null,"","?mint="+encodeURIComponent(d.mint)+(SRC?"&src="+encodeURIComponent(SRC):""));render(d);addRecent(d);schedule();
-  }catch(e){last=null;mint="";out.replaceChildren(el("p",e.message,"err"))}
+    last=d;mint=d.mint;$("#mint").value=d.mint;history.replaceState(null,"","?mint="+encodeURIComponent(d.mint)+(SRC?"&src="+encodeURIComponent(SRC):""));render(d);document.dispatchEvent(new CustomEvent("pool-shield:scan",{detail:d}));addRecent(d);schedule();
+  }catch(e){if(id!==reqId)return;last=null;mint="";document.dispatchEvent(new CustomEvent("pool-shield:scan",{detail:null}));out.replaceChildren(el("p",scanError(e),"err"))}
 }
-function setLang(l){lang=l;try{localStorage.setItem("lang",l)}catch(e){}chrome();if(last)render(last)}
+function scanError(e){
+  const msg=String(e?.message||"");
+  const p=lang==="pcm";
+  if(!navigator.onLine||/failed to fetch|network error/i.test(msg))return p?"Internet no dey. Connect again and try.":"Network connection unavailable. Reconnect and try again.";
+  if(/not a token mint|invalid.*address|invalid.*mint/i.test(msg))return p?"This token address no correct. Enter correct Solana token address or link.":"Invalid token address. Enter a valid Solana token address or link.";
+  return p?"We no fit finish this check. Try again later.":"Unable to complete this scan. Try again later.";
+}
+function setLang(l){lang=l;try{localStorage.setItem("lang",l)}catch(e){}chrome();if(last)render(last);document.dispatchEvent(new CustomEvent("pool-shield:language"))}
 $("#en").addEventListener("click",()=>setLang("en"));$("#pcm").addEventListener("click",()=>setLang("pcm"));
 $("#f").addEventListener("submit",e=>{e.preventDefault();const m=$("#mint").value.trim();if(m){history.replaceState(null,"","?mint="+encodeURIComponent(m));run(m)}});
 document.addEventListener("visibilitychange",()=>{if(document.hidden)clearTimeout(timer);else if(live&&mint)refresh(false)});
