@@ -31,6 +31,8 @@ UI.en.priv="Privacy";UI.en.rlink="Showing the token from your link.";UI.en.rpool
 UI.pcm.priv="Privacy";UI.pcm.rlink="We dey show the token from your link.";UI.pcm.rpool="That one look like pool address, so this na the token wey dey inside am.";
 UI.en.share="Share";UI.en.first="Read this first";UI.en.noflags="No red or amber flags in the checks that ran.";UI.en.qrdl="Download QR";UI.en.bd={ok:"Good",warn:"Watch",bad:"Risk",unknown:"Unknown",info:"Info"};
 UI.pcm.share="Share";UI.pcm.first="Make you read this first";UI.pcm.noflags="No red or amber flag for the checks wey run.";UI.pcm.qrdl="Download QR";UI.pcm.bd={ok:"Good",warn:"Dey careful",bad:"Risk",unknown:"No know",info:"Info"};
+Object.assign(UI.en,{lead:"Paste a Solana token address or link to understand its security evidence.",f1d:"Understand mint authority, freeze authority and ownership concentration.",f3d:"Share a result card or a link that runs a fresh scan.",qrcap1:"Scan this to run a fresh check in Pool Shield.",qrlink:"Fresh scan link",hold:"Top 10 holders"});
+Object.assign(UI.pcm,{lead:"Paste Solana token address or link make you understand the security evidence.",f1d:"Understand mint power, freeze power and how accounts hold tokens.",f3d:"Share result picture or link wey go check am afresh.",qrcap1:"Scan am to check token afresh for Pool Shield.",qrlink:"Link to check afresh",hold:"Top 10 holders",t1:"Free",t2:"No need register",t3:"Live market data",clear:"Clear history",close:"Close am",priv:"Privacy",chk:"Wetin we check",qrdl:"Save QR",share:"Share am",onchain:"Blockchain checks from {m} minutes ago"});
 const $=s=>document.querySelector(s), out=$("#out");
 const SRC=(new URLSearchParams(location.search).get("src")||"").replace(/[^a-z0-9_-]/gi,"").slice(0,20);
 let lang="en", last=null, live=true, mint="", timer=null, reqId=0;
@@ -151,7 +153,7 @@ async function saveImage(){
 }
 function chrome(){
   const u=UI[lang];
-  $("#lead").textContent=u.lead;$("#mint").placeholder=u.ph;$("#go").textContent=u.go;$("#foot").textContent=u.foot;$("#lm").textContent=u.meth;$("#lp").textContent=u.priv;$("#lr").textContent=u.rep;
+  $("#lead").textContent=u.lead;$("#mint").placeholder=u.ph;$("#mint").setAttribute("aria-label",u.ph);$("#go").textContent=u.go;$("#foot").textContent=u.foot;$("#lm").textContent=u.meth;$("#lp").textContent=u.priv;$("#lr").textContent=u.rep;
   if(FEEDBACK_URL){const a=$("#lf");a.textContent=u.fb;a.href=FEEDBACK_URL;$("#fbwrap").hidden=false}
   renderRecent();
   ["t1","t2","t3","f1t","f1d","f2t","f2d","f3t","f3d"].forEach(k=>{$("#"+k).textContent=u[k]});renderExamples();
@@ -220,7 +222,7 @@ function render(d){
     hc.append(el("p",u.hnote,"tip"));
   }else hc.append(el("p",u.hnone,"tip"));
   const limitations=el("p",p?"Lower score mean fewer risk signs, no be guarantee of safety. Missing evidence no mean say everything dey okay.":"A lower score means fewer observed risk indicators, not guaranteed safety. Missing evidence is not a clean result.","tip");
-  const market=el("details",null,"hcard");market.dataset.id="market-context";market.open=open.has("market-context");market.append(el("summary",p?"Market information":"Market context"),stats);
+  const market=el("details",null,"hcard");market.dataset.id="market-context";market.open=open.has("market-context");market.append(el("summary",p?"Market information wey we see":"Market context"),stats);
   out.replaceChildren(vc,limitations,...(d.resolved?[el("p",d.resolved.kind==="pool"?u.rpool:u.rlink,"tip")]:[]),ctl,know,el("p",d.coverage?u.cov.replace("{a}",d.coverage.done).replace("{b}",d.coverage.total):"","tip"),aiPanel,el("p",u.tip,"tip"),el("h3",u.chk,"eyebrow"),list,hc,...(q?[market]:[]));
   stamp();
 }
