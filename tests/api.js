@@ -8,9 +8,9 @@ scanner.scan = async (mint) => {
   return {mint};
 };
 const handler = require("../api/scan");
-async function request(method, query, ip = "127.0.0.1") {
+async function request(method, query, ip = "127.0.0.1", instance = handler) {
   const res = {headers:{}, setHeader(k,v){this.headers[k]=v;}, status(c){this.code=c;return this;},json(o){this.body=o;return this;}};
-  await handler({method,query,headers:{},socket:{remoteAddress:ip}},res);
+  await instance({method,query,headers:{},socket:{remoteAddress:ip}},res);
   return res;
 }
 (async()=>{
@@ -48,6 +48,29 @@ async function request(method, query, ip = "127.0.0.1") {
     return {ok:true,json:async()=>({result:1})};
   };
   r=await request("GET",{mint:"example"},"127.0.0.6"); assert.equal(r.code,200);
+  // Simulate a shared Redis counter across two independently loaded handlers.
+  delete require.cache[require.resolve("../api/scan")];
+  const second = require("../api/scan");
+  let now = 0;
+  const counters = new Map();
+  global.fetch = async (url, options) => {
+    const [command, script, keys, key, ttl] = JSON.parse(options.body);
+    assert.equal(command,"EVAL"); assert.equal(keys,1); assert.equal(ttl,60000);
+    assert.match(script,/PEXPIRE/);
+    let entry = counters.get(key);
+    if (!entry || now >= entry.expires) entry = {count:0,expires:now+ttl};
+    entry.count++; counters.set(key,entry);
+    return {ok:true,json:async()=>({result:entry.count})};
+  };
+  const ip = "127.0.0.7";
+  for(let i=0;i<120;i++) assert.equal((await request("GET",{mint:"example"},ip,i%2?second:handler)).code,200);
+  const before = calls;
+  r=await request("GET",{mint:"example"},ip,second);
+  assert.equal(r.code,429); assert.equal(r.headers["Retry-After"],"60"); assert.equal(calls,before);
+  now+=60000;
+  assert.equal((await request("GET",{mint:"example"},ip,handler)).code,200);
+  global.fetch=async()=>({ok:true,json:async()=>({result:null})});
+  assert.equal((await request("GET",{mint:"example"},"127.0.0.8")).code,503);
   delete process.env.KV_REST_API_URL;
   delete process.env.KV_REST_API_TOKEN;
   console.log("API regression checks passed");
