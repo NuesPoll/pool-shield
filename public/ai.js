@@ -18,6 +18,7 @@ let scan = null;
 let busy = false;
 let model = null;
 let scanVersion = 0;
+let completed = false;
 let startupError = null;
 const config = window.POOL_SHIELD_FIREBASE_CONFIG;
 const siteKey = window.POOL_SHIELD_APP_CHECK_SITE_KEY;
@@ -40,12 +41,13 @@ try {
 function updateScan(event) {
   localizePanel();
   scanVersion++;
+  completed = false;
   scan = event.detail || null;
   panel.hidden = !scan;
   answer.textContent = "";
   source.textContent = "";
   status.textContent = scan ? tr("AI does not change the scan results.", "AI no dey change wetin scan find.") : "";
-  button.disabled = !scan || busy;
+  button.disabled = !scan || busy || completed;
 }
 document.addEventListener("pool-shield:scan", updateScan);
 document.addEventListener("pool-shield:language", () => updateScan({detail: scan}));
@@ -56,7 +58,7 @@ function evidence(data) {
     verdict: data.verdict,
     coverage: data.coverage,
     checks: (data.checks || []).map(c => ({
-      label: c.label, status: c.status, detail: c.detail, explanation: c.explanation
+      label: c.label, status: c.status, detail: c.detail, explanation: c.why
     })),
     pair: data.pair ? {
       dex: data.pair.dex, liquidityUsd: data.pair.liquidityUsd, ageHours: data.pair.ageHours
@@ -64,7 +66,7 @@ function evidence(data) {
   };
 }
 button.addEventListener("click", async () => {
-  if (!scan || busy) return;
+  if (!scan || busy || completed) return;
   if (!model) {
     status.textContent = tr("AI is unavailable. Try again later.", "AI no dey available now. Try again later.");
     return;
@@ -108,6 +110,7 @@ button.addEventListener("click", async () => {
         answer.append(document.createTextNode(part));
       }
     }
+    completed = true;
     const inferenceSource = result.response.inferenceSource;
     source.textContent = inferenceSource === "ON_DEVICE" ? tr("Generated on this device", "AI work for this device") :
       inferenceSource === "IN_CLOUD" ? tr("Generated in cloud", "AI work for cloud") : "";
@@ -120,6 +123,6 @@ button.addEventListener("click", async () => {
   } finally {
     generating = false;
     busy = false;
-    button.disabled = !scan;
+    button.disabled = !scan || completed;
   }
 });
