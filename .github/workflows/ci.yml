@@ -18,6 +18,11 @@ jobs:
         run: npm test
       - name: API regression tests
         run: node tests/api.js
+      - name: Server JavaScript syntax
+        run: |
+          node --check server.js
+          node --check api/scan.js
+          node --check lib/scan.js
       - name: Browser JavaScript syntax
         run: |
           node --check public/app.js
