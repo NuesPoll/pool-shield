@@ -19,8 +19,9 @@ function limited(ip) {
 }
 // Optional shared quota. Credentials stay on the server.
 async function sharedLimited(ip) {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const explicit = process.env.UPSTASH_REDIS_REST_URL || process.env.UPSTASH_REDIS_REST_TOKEN;
+  const url = explicit ? process.env.UPSTASH_REDIS_REST_URL : process.env.KV_REST_API_URL;
+  const token = explicit ? process.env.UPSTASH_REDIS_REST_TOKEN : process.env.KV_REST_API_TOKEN;
   if (!url && !token) return false;
   if (!url || !token) throw new Error("Incomplete shared quota configuration");
   const key = "pool-shield:scan:" + require("node:crypto").createHash("sha256").update(ip).digest("hex");
