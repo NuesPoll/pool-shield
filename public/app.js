@@ -211,11 +211,17 @@ function render(d){
   const hs=(d.holders||[]).filter(x=>x.owner);
   if(hs.length){
     const kl={wallet:u.hw,pool:u.hp,program:u.hg,burn:u.hb};
+    const chart=el("div",null,"holder-chart");
+    chart.setAttribute("aria-label",p?"Percentage of supply wey each account hold":"Percentage of supply held by each account");
+    hs.forEach((x,n)=>{if(!Number.isFinite(x.pct)||x.pct<0||x.pct>100)return;const line=el("div",null,"holder-line"),track=el("div",null,"holder-track"),bar=document.createElement("progress");bar.max=100;bar.value=x.pct;bar.setAttribute("aria-label","#"+(n+1));track.append(bar);line.append(el("span","#"+(n+1)),track,el("span",x.pct.toFixed(2)+"%"));chart.append(line)});
+    if(chart.children.length)hc.append(chart);
     hs.forEach((x,n)=>{const r=el("div",null,"hrow");r.append(el("span",String(n+1),"hn"),el("span",kl[x.kind]||x.kind,"hk "+x.kind),el("b",x.pct==null?amt(x.amount):x.pct.toFixed(2)+"%","hv"));
       const l=el("a",x.owner.slice(0,4)+"..."+x.owner.slice(-4));l.href="https://solscan.io/account/"+x.owner;l.target="_blank";l.rel="noopener noreferrer";r.append(l);hc.append(r)});
     hc.append(el("p",u.hnote,"tip"));
   }else hc.append(el("p",u.hnone,"tip"));
-  out.replaceChildren(vc,...(d.resolved?[el("p",d.resolved.kind==="pool"?u.rpool:u.rlink,"tip")]:[]),ctl,stats,know,aiPanel,el("p",d.coverage?u.cov.replace("{a}",d.coverage.done).replace("{b}",d.coverage.total):"","tip"),el("p",u.tip,"tip"),el("h3",u.chk,"eyebrow"),list,hc);
+  const limitations=el("p",p?"Lower score mean fewer risk signs, no be guarantee of safety. Missing evidence no mean say everything dey okay.":"A lower score means fewer observed risk indicators, not guaranteed safety. Missing evidence is not a clean result.","tip");
+  const market=el("details",null,"hcard");market.dataset.id="market-context";market.open=open.has("market-context");market.append(el("summary",p?"Market information":"Market context"),stats);
+  out.replaceChildren(vc,limitations,...(d.resolved?[el("p",d.resolved.kind==="pool"?u.rpool:u.rlink,"tip")]:[]),ctl,know,el("p",d.coverage?u.cov.replace("{a}",d.coverage.done).replace("{b}",d.coverage.total):"","tip"),aiPanel,el("p",u.tip,"tip"),el("h3",u.chk,"eyebrow"),list,hc,...(q?[market]:[]));
   stamp();
 }
 function schedule(){clearTimeout(timer);if(live&&mint&&!document.hidden)timer=setTimeout(()=>refresh(false),20000)}
