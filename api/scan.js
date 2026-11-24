@@ -17,6 +17,26 @@ function limited(ip) {
   entry.count++;
   return false;
 }
+// Optional shared quota. Credentials stay on the server.
+async function sharedLimited(ip) {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url && !token) return false;
+  if (!url || !token) throw new Error("Incomplete shared quota configuration");
+  const key = "pool-shield:scan:" + require("node:crypto").createHash("sha256").update(ip).digest("hex");
+  const script = "local n=redis.call('INCR',KEYS[1]); if n==1 then redis.call('PEXPIRE',KEYS[1],ARGV[1]) end; return n";
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+    body: JSON.stringify(["EVAL", script, 1, key, WINDOW]),
+    signal: AbortSignal.timeout(2500),
+    redirect: "error"
+  });
+  if (!response.ok) throw new Error("Shared quota unavailable");
+  const data = await response.json();
+  if (!Number.isSafeInteger(data.result) || data.result < 1) throw new Error("Invalid shared quota response");
+  return data.result > LIMIT;
+}
 module.exports = async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   if (req.method !== "GET") {
@@ -33,6 +53,10 @@ module.exports = async (req, res) => {
     return res.status(400).json({ error: "Enter a valid Solana token address or link." });
   }
   try {
+    if (await sharedLimited(ip)) {
+      res.setHeader("Retry-After", "60");
+      return res.status(429).json({ error: "Too many scans from this connection. Wait a minute and try again." });
+    }
     const out = await scan(q.mint.trim(), { fresh: q.fresh === "1", quiet: q.live === "1", src: typeof q.src === "string" ? q.src.replace(/[^a-z0-9_-]/gi, "").slice(0, 20) : "" });
     return res.status(200).json(out);
   } catch (e) {
