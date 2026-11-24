@@ -25,5 +25,7 @@ jobs:
           node --check lib/scan.js
       - name: Browser JavaScript syntax
         run: |
+          node --check public/theme.js
+          node --check public/workspace.js
           node --check public/app.js
           node --input-type=module --check < public/ai.js

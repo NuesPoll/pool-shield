@@ -31,6 +31,8 @@ UI.en.priv="Privacy";UI.en.rlink="Showing the token from your link.";UI.en.rpool
 UI.pcm.priv="Privacy";UI.pcm.rlink="We dey show the token from your link.";UI.pcm.rpool="That one look like pool address, so this na the token wey dey inside am.";
 UI.en.share="Share";UI.en.first="Read this first";UI.en.noflags="No red or amber flags in the checks that ran.";UI.en.qrdl="Download QR";UI.en.bd={ok:"Good",warn:"Watch",bad:"Risk",unknown:"Unknown",info:"Info"};
 UI.pcm.share="Share";UI.pcm.first="Make you read this first";UI.pcm.noflags="No red or amber flag for the checks wey run.";UI.pcm.qrdl="Download QR";UI.pcm.bd={ok:"Good",warn:"Dey careful",bad:"Risk",unknown:"No know",info:"Info"};
+Object.assign(UI.en,{lead:"Paste a Solana token address or link to understand its security evidence.",f1d:"Understand mint authority, freeze authority and ownership concentration.",f3d:"Share a result card or a link that runs a fresh scan.",qrcap1:"Scan this to run a fresh check in Pool Shield.",qrlink:"Fresh scan link",hold:"Top 10 holders"});
+Object.assign(UI.pcm,{lead:"Paste Solana token address or link make you understand the security evidence.",f1d:"Understand mint power, freeze power and how accounts hold tokens.",f3d:"Share result picture or link wey go check am afresh.",qrcap1:"Scan am to check token afresh for Pool Shield.",qrlink:"Link to check afresh",hold:"Top 10 holders",t1:"Free",t2:"No need register",t3:"Live market data",clear:"Clear history",close:"Close am",priv:"Privacy",chk:"Wetin we check",qrdl:"Save QR",share:"Share am",onchain:"Blockchain checks from {m} minutes ago"});
 const $=s=>document.querySelector(s), out=$("#out");
 const SRC=(new URLSearchParams(location.search).get("src")||"").replace(/[^a-z0-9_-]/gi,"").slice(0,20);
 let lang="en", last=null, live=true, mint="", timer=null, reqId=0;
@@ -151,7 +153,7 @@ async function saveImage(){
 }
 function chrome(){
   const u=UI[lang];
-  $("#lead").textContent=u.lead;$("#mint").placeholder=u.ph;$("#go").textContent=u.go;$("#foot").textContent=u.foot;$("#lm").textContent=u.meth;$("#lp").textContent=u.priv;$("#lr").textContent=u.rep;
+  $("#lead").textContent=u.lead;$("#mint").placeholder=u.ph;$("#mint").setAttribute("aria-label",u.ph);$("#go").textContent=u.go;$("#foot").textContent=u.foot;$("#lm").textContent=u.meth;$("#lp").textContent=u.priv;$("#lr").textContent=u.rep;
   if(FEEDBACK_URL){const a=$("#lf");a.textContent=u.fb;a.href=FEEDBACK_URL;$("#fbwrap").hidden=false}
   renderRecent();
   ["t1","t2","t3","f1t","f1d","f2t","f2d","f3t","f3d"].forEach(k=>{$("#"+k).textContent=u[k]});renderExamples();
@@ -166,6 +168,40 @@ function stamp(){
   if(last.chainAgeSec>=60)t+=" | "+u.onchain.replace("{m}",Math.round(last.chainAgeSec/60));
   n.textContent=t;
 }
+
+// Print a local snapshot; the browser can save it as PDF without uploading evidence.
+function printReport(data,full){
+  const p=lang==="pcm", t=(en,pcm)=>p?pcm:en, u=UI[lang];
+  const report=el("section",null,"print-report");
+  report.lang=p?"pcm":"en";
+  const add=(tag,value)=>report.append(el(tag,value));
+  add("h1","Pool Shield — Beyond the scan.");
+  add("h2",full?t("Technical report","Full technical report"):t("Security summary","Security summary"));
+  add("p",t("Token: ","Token: ")+(data.token?data.token.name+" ("+data.token.symbol+")":u.unk));
+  add("p",data.mint);
+  add("p",t("Scan timestamp: ","Time we check: ")+String(data.scannedAt||u.nr));
+  add("h2",(p?data.verdictPcm:data.verdict)+(data.score==null?"":" — "+data.score+"/100 "+u.risk));
+  add("p",u.disc);
+  if(data.coverage)add("p",u.cov.replace("{a}",data.coverage.done).replace("{b}",data.coverage.total));
+  add("h3",u.chk);
+  const checks=data.checks||[];
+  const selected=full?checks:checks.filter(c=>["bad","warn","unknown"].includes(c.status));
+  if(!selected.length)add("p",u.noflags);
+  selected.forEach(c=>{add("p",(p?c.labelPcm:c.label)+" — "+(u.bd[c.status]||c.status)+": "+(p?c.detailPcm:c.detail));if(full)add("p",p?c.whyPcm:c.why)});
+  add("h3",u.hold);
+  const holders=(data.holders||[]).filter(x=>x.owner).slice(0,10);
+  if(!holders.length)add("p",u.hnone);
+  holders.forEach((x,i)=>{const line=el("div",null,"print-holder");line.append(el("span","#"+(i+1)+" "+(full?x.owner:x.owner.slice(0,4)+"…"+x.owner.slice(-4))+" · "+(x.kind||u.nr)+" · "+(Number.isFinite(x.pct)?x.pct.toFixed(2)+"%":u.nr)));if(Number.isFinite(x.pct)&&x.pct>=0&&x.pct<=100){const bar=document.createElement("progress");bar.max=100;bar.value=x.pct;line.append(bar)}report.append(line)});
+  add("p",u.hnote);
+  if(full&&data.pair){add("h3",t("Market context","Market information"));add("p",u.liq+": "+money(data.pair.liquidityUsd));add("p",u.agel+": "+(data.pair.ageHours??u.nr)+" h");}
+  add("p",t("Sources: public Solana RPC; market and lock information may come from Dexscreener and RugCheck. Third-party lock claims are not independently verified. This is a snapshot, not a live report.","Sources: public Solana RPC; market and lock information fit come from Dexscreener and RugCheck. We no independently confirm lock claims. Na saved report, no be live check."));
+  document.querySelector(".print-report")?.remove();
+  document.body.append(report);
+  const cleanup=()=>report.remove();
+  window.addEventListener("afterprint",cleanup,{once:true});
+  try{window.print()}finally{cleanup();window.removeEventListener("afterprint",cleanup)}
+}
+
 function render(d){
   const u=UI[lang],p=lang==="pcm";
   const open=new Set([...out.querySelectorAll("details[open]")].map(x=>x.dataset.id));
@@ -186,7 +222,7 @@ function render(d){
   const st=el("span",null,"stampline");st.id="stamp";
   const sb=el("button",null,"btn ghost");sb.type="button";sb.innerHTML=ICON.share;sb.append(document.createTextNode(u.share));
   const menu=el("div",null,"menu");menu.hidden=true;
-  [[u.copy,copyLink],[u.wa,whatsapp],[u.img,saveImage],[u.qrshow,showQr]].forEach(([t,f])=>{const m=el("button",t,"mi");m.type="button";m.onclick=()=>{menu.hidden=true;f(m)};menu.append(m)});
+  [[u.copy,copyLink],[u.wa,whatsapp],[u.img,saveImage],[u.qrshow,showQr],[p?"Save summary PDF":"Save summary PDF",()=>printReport(d,false)],[p?"Save full report PDF":"Save technical PDF",()=>printReport(d,true)]].forEach(([t,f])=>{const m=el("button",t,"mi");m.type="button";m.onclick=()=>{menu.hidden=true;f(m)};menu.append(m)});
   sb.onclick=e=>{e.stopPropagation();menu.hidden=!menu.hidden};
   const shw=el("div",null,"shw");shw.append(sb,menu);
   const dq=el("button",null,"btn ghost");dq.type="button";dq.innerHTML=ICON.qr;dq.append(document.createTextNode(u.qrdl));dq.onclick=quickQr;
@@ -208,14 +244,27 @@ function render(d){
   if(flags.length){const ul=el("ul");flags.forEach(c=>{const li=el("li");li.append(el("b",p?c.labelPcm:c.label),document.createTextNode(": "+(p?c.detailPcm:c.detail)));ul.append(li)});know.append(ul)}
   else know.append(el("p",u.noflags));
   const hc=el("section",null,"hcard");hc.append(el("h3",u.hold));
-  const hs=(d.holders||[]).filter(x=>x.owner);
+  const hs=(d.holders||[]).filter(x=>x.owner).slice(0,10);
   if(hs.length){
     const kl={wallet:u.hw,pool:u.hp,program:u.hg,burn:u.hb};
-    hs.forEach((x,n)=>{const r=el("div",null,"hrow");r.append(el("span",String(n+1),"hn"),el("span",kl[x.kind]||x.kind,"hk "+x.kind),el("b",x.pct==null?amt(x.amount):x.pct.toFixed(2)+"%","hv"));
-      const l=el("a",x.owner.slice(0,4)+"..."+x.owner.slice(-4));l.href="https://solscan.io/account/"+x.owner;l.target="_blank";l.rel="noopener noreferrer";r.append(l);hc.append(r)});
+    const chart=el("div",null,"holder-chart");
+    chart.setAttribute("aria-label",p?"Percentage of supply wey each account hold":"Percentage of supply held by each account");
+    hs.forEach((x,n)=>{if(!Number.isFinite(x.pct)||x.pct<0||x.pct>100)return;const line=el("div",null,"holder-line"),track=el("div",null,"holder-track"),bar=document.createElement("progress");bar.max=100;bar.value=x.pct;bar.setAttribute("aria-label","#"+(n+1));track.append(bar);line.append(el("span","#"+(n+1)),track,el("span",x.pct.toFixed(2)+"%"));chart.append(line)});
+    if(chart.children.length)hc.append(chart);
+    const table=el("table",null,"holder-table"),thead=el("thead"),headRow=el("tr"),tbody=el("tbody");
+    table.setAttribute("aria-label",u.hold);
+    ["#",p?"Account":"Account",p?"Type":"Type",p?"Share of supply":"Supply share"].forEach(label=>{const th=el("th",label);th.scope="col";headRow.append(th)});
+    thead.append(headRow);
+    hs.slice(0,10).forEach((x,n)=>{const r=el("tr"),rank=el("th",String(n+1));rank.scope="row";
+      const account=el("td"),l=el("a",x.owner.slice(0,4)+"…"+x.owner.slice(-4));l.href="https://solscan.io/account/"+encodeURIComponent(x.owner);l.title=x.owner;l.setAttribute("aria-label",x.owner);l.target="_blank";l.rel="noopener noreferrer";account.append(l);
+      const kind=el("td",kl[x.kind]||x.kind),share=el("td",Number.isFinite(x.pct)?x.pct.toFixed(2)+"%":u.nr);
+      r.append(rank,account,kind,share);tbody.append(r)});
+    table.append(thead,tbody);hc.append(table);
     hc.append(el("p",u.hnote,"tip"));
   }else hc.append(el("p",u.hnone,"tip"));
-  out.replaceChildren(vc,...(d.resolved?[el("p",d.resolved.kind==="pool"?u.rpool:u.rlink,"tip")]:[]),ctl,stats,know,aiPanel,el("p",d.coverage?u.cov.replace("{a}",d.coverage.done).replace("{b}",d.coverage.total):"","tip"),el("p",u.tip,"tip"),el("h3",u.chk,"eyebrow"),list,hc);
+  const limitations=el("p",p?"Lower score mean fewer risk signs, no be guarantee of safety. Missing evidence no mean say everything dey okay.":"A lower score means fewer observed risk indicators, not guaranteed safety. Missing evidence is not a clean result.","tip");
+  const market=el("details",null,"hcard");market.dataset.id="market-context";market.open=open.has("market-context");market.append(el("summary",p?"Market information wey we see":"Market context"),stats);
+  out.replaceChildren(vc,limitations,...(d.resolved?[el("p",d.resolved.kind==="pool"?u.rpool:u.rlink,"tip")]:[]),ctl,know,el("p",d.coverage?u.cov.replace("{a}",d.coverage.done).replace("{b}",d.coverage.total):"","tip"),aiPanel,el("p",u.tip,"tip"),el("h3",u.chk,"eyebrow"),list,hc,...(q?[market]:[]));
   stamp();
 }
 function schedule(){clearTimeout(timer);if(live&&mint&&!document.hidden)timer=setTimeout(()=>refresh(false),20000)}
@@ -230,7 +279,7 @@ async function refresh(fresh){
   schedule();
 }
 async function run(m){
-  mint=m;clearTimeout(timer);const id=++reqId;
+  mint=m;document.body.classList.remove("scanned");clearTimeout(timer);const id=++reqId;
   document.dispatchEvent(new CustomEvent("pool-shield:scan",{detail:null}));
   out.replaceChildren(el("p",UI[lang].busy,"muted"));
   try{
@@ -238,7 +287,7 @@ async function run(m){
     if(id!==reqId)return;
     if(!r.ok)throw new Error(d.error||"Scan failed");
     last=d;mint=d.mint;$("#mint").value=d.mint;history.replaceState(null,"","?mint="+encodeURIComponent(d.mint)+(SRC?"&src="+encodeURIComponent(SRC):""));render(d);document.dispatchEvent(new CustomEvent("pool-shield:scan",{detail:d}));addRecent(d);schedule();
-  }catch(e){if(id!==reqId)return;last=null;mint="";document.dispatchEvent(new CustomEvent("pool-shield:scan",{detail:null}));out.replaceChildren(el("p",scanError(e),"err"))}
+  }catch(e){if(id!==reqId)return;last=null;mint="";document.body.classList.remove("scanned");document.dispatchEvent(new CustomEvent("pool-shield:scan",{detail:null}));out.replaceChildren(el("p",scanError(e),"err"))}
 }
 function scanError(e){
   const msg=String(e?.message||"");
@@ -267,25 +316,29 @@ async function decodeFrom(src,w0,h0,scales){
   return null;
 }
 function qrMsg(t){$("#qrmsg").textContent=t}
-function qrStop(){clearInterval(qrTimer);qrTimer=null;if(qrStream){qrStream.getTracks().forEach(x=>x.stop());qrStream=null}$("#qrbox").hidden=true}
+let qrEpoch=0;
+function qrStop(){qrEpoch++;$("#qrvideo").srcObject=null;clearInterval(qrTimer);qrTimer=null;if(qrStream){qrStream.getTracks().forEach(x=>x.stop());qrStream=null}$("#qrbox").hidden=true}
 function qrUse(text){
   const a=addrFrom(text);
   if(!a){qrMsg(UI[lang].qrfail);return false}
   qrStop();$("#mint").value=a;history.replaceState(null,"","?mint="+encodeURIComponent(a));run(a);return true;
 }
 async function qrStart(){
+  qrStop();const epoch=qrEpoch;
   const u=UI[lang];
   try{await loadJsQR()}catch(e){}
+  if(epoch!==qrEpoch)return;
   $("#qrbox").hidden=false;qrMsg(u.qrhint);
   try{
-    qrStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});
-    const v=$("#qrvideo");v.srcObject=qrStream;await v.play();
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});
+    if(epoch!==qrEpoch){stream.getTracks().forEach(t=>t.stop());return}qrStream=stream;
+    const v=$("#qrvideo");v.srcObject=qrStream;await v.play();if(epoch!==qrEpoch)return;
     qrTimer=setInterval(async()=>{
       if(qrBusy||!v.videoWidth)return;qrBusy=true;
       const data=await decodeFrom(v,v.videoWidth,v.videoHeight,[960]);
-      qrBusy=false;if(data)qrUse(data);
+      qrBusy=false;if(data&&epoch===qrEpoch)qrUse(data);
     },250);
-  }catch(e){qrMsg(u.qrdenied)}
+  }catch(e){if(epoch===qrEpoch){qrStop();$("#qrbox").hidden=false;qrMsg(u.qrdenied)}}
 }
 async function qrFromFile(f){
   if(!f)return;const u=UI[lang];
