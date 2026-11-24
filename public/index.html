@@ -153,12 +153,39 @@ button{background:var(--action);color:var(--on-action)}button:hover{background:v
 .vcard{border-left-width:5px}.brand h1{font-size:2rem}.tagline{color:var(--muted);margin:0 0 14px;font-weight:600}
 #theme-choice{font:inherit;color:var(--deep);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px;max-width:110px}
 .top{flex-wrap:wrap}
+
+/* Responsive workspace, with one shared navigation. */
+[hidden]{display:none!important}
+.workspace{min-height:100vh}
+.workspace-nav{display:flex;gap:6px;background:var(--surface);border-right:1px solid var(--line);padding:24px 16px;flex-direction:column;position:fixed;inset:0 auto 0 0;width:220px;z-index:8}
+.workspace-nav .nav-brand{font-size:1.2rem;font-weight:700;margin:0 0 24px;padding:8px}
+.workspace-nav button{display:flex;align-items:center;gap:12px;text-align:left;background:transparent;color:var(--muted);padding:12px;border-radius:8px;font-weight:600}
+.workspace-nav button[aria-current=page]{background:var(--tile);color:var(--aqua);outline:1px solid var(--line)}
+.workspace-nav svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.workspace main{margin-left:220px;width:calc(100% - 220px);max-width:1200px;padding:28px clamp(20px,4vw,60px) 56px}
+.workspace .brand h1{font-size:clamp(1.7rem,3vw,2.4rem)}
+.workspace .lead{max-width:60ch}
+.workspace .trust{margin:0 0 20px}
+.workspace #f{max-width:860px}
+.workspace .recent{align-items:flex-start}
+#history-panel .recent{display:flex;flex-direction:column}
+#history-panel .chip{white-space:normal;text-align:left}
+#learn-panel article{max-width:70ch;border-top:1px solid var(--line);padding:12px 0}
+#learn-panel article h3{margin:0 0 6px}
+#learn-panel article p{margin:0;color:var(--muted)}
+@media(max-width:760px){.workspace-nav{inset:auto 0 0;width:100%;flex-direction:row;justify-content:space-around;border-right:0;border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom));gap:4px}.workspace-nav .nav-brand{display:none}.workspace-nav button{flex:1;flex-direction:column;gap:3px;font-size:.78rem;min-height:48px;justify-content:center;padding:6px}.workspace main{margin:0 auto;width:100%;padding:18px 16px 110px}.workspace .top{justify-content:flex-end}}
 </style>
 </head>
-<body>
+<body class="workspace">
+<nav class="workspace-nav" aria-label="Main navigation">
+<div class="nav-brand">Pool Shield</div>
+<button type="button" data-view="scanner" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V4h4m8 0h4v4m0 8v4h-4m-8 0H4v-4M4 12h16"/></svg><span data-copy="scanner">Scanner</span></button>
+<button type="button" data-view="history"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8m0-5v5h5m4-1v5l3 2"/></svg><span data-copy="history">History</span></button>
+<button type="button" data-view="learn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v15M3 4h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5v14h-5a4 4 0 0 0-4 2 4 4 0 0 0-4-2H3z"/></svg><span data-copy="learn">Learn</span></button>
+</nav>
 <main>
 <div class="top" role="group" aria-label="Display preferences"><select id="theme-choice" aria-label="Color theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select><button id="en" type="button">English</button><button id="pcm" type="button">Pidgin</button></div>
-<div class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg><h1>Pool Shield</h1></div>
+<section id="scanner-panel" aria-label="Scanner"><div class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg><h1>Pool Shield</h1></div>
 <p class="tagline">Beyond the scan.</p><p class="lead" id="lead"></p>
 <div class="trust"><span id="t1"></span><span id="t2"></span><span id="t3"></span></div>
 <form id="f">
@@ -167,7 +194,7 @@ button{background:var(--action);color:var(--on-action)}button:hover{background:v
 <input type="file" id="qrfile" accept="image/*" hidden>
 </form>
 <div id="qrbox" class="qrbox" hidden><div class="qrin"><video id="qrvideo" playsinline muted></video><p id="qrmsg"></p><button type="button" id="qrphoto" class="btn ghost"></button> <button type="button" id="qrclose" class="btn ghost"></button></div></div>
-<div id="recent" class="recent"></div>
+
 <div id="examples" class="recent"></div>
 <div id="qrout" class="qrbox" hidden><div class="qrin"><div id="qrcv"></div><p id="qrcap"></p><div class="ctl" style="justify-content:center"><button type="button" id="qrt1" class="mini"></button><button type="button" id="qrt2" class="mini"></button><button type="button" id="qrdl" class="btn"></button><button type="button" id="qrx" class="btn ghost"></button></div></div></div>
 <div id="out" aria-live="polite"></div>
@@ -180,12 +207,16 @@ button{background:var(--action);color:var(--on-action)}button:hover{background:v
   <p id="ai-source" class="muted"></p>
 </section>
 <section id="features" class="tiles"><div><h3 id="f1t"></h3><p id="f1d"></p></div><div><h3 id="f2t"></h3><p id="f2d"></p></div><div><h3 id="f3t"></h3><p id="f3d"></p></div></section>
+</section>
+<section id="history-panel" hidden><h1 data-copy="history">History</h1><p class="muted" data-copy="historyNote">Recent scans are stored only in this browser. Opening one runs a fresh scan.</p><p id="history-empty" class="muted" data-copy="empty">No scans yet.</p><div id="recent" class="recent"></div></section>
+<section id="learn-panel" hidden><h1 data-copy="learn">Learn</h1><p class="lead" data-copy="learnNote">Understand the evidence behind a security report.</p><article><h3 data-copy="mintTitle">Mint authority</h3><p data-copy="mintText">An active mint authority can create additional tokens. This is a risk indicator, not proof of wrongdoing.</p></article><article><h3 data-copy="freezeTitle">Freeze authority</h3><p data-copy="freezeText">A freeze authority can restrict transfers from token accounts.</p></article><article><h3 data-copy="holderTitle">Holder concentration</h3><p data-copy="holderText">A few accounts may hold much of the supply. Accounts do not necessarily represent different people.</p></article><article><h3 data-copy="liquidityTitle">Liquidity evidence</h3><p data-copy="liquidityText">Liquidity data describes available pool assets. Lock information may be incomplete or unverified.</p></article><article><h3 data-copy="scoreTitle">Risk scores</h3><p data-copy="scoreText">A lower score means fewer observed risk indicators, not a guarantee of safety.</p></article></section>
 <footer><p id="foot"></p><p><a id="lm" href="/methodology"></a> | <a id="lp" href="/privacy"></a> | <a id="lr" href="https://github.com/NuesPoll/pool-shield/issues" target="_blank" rel="noopener noreferrer"></a><span id="fbwrap" hidden> | <a id="lf" target="_blank" rel="noopener noreferrer"></a></span></p></footer>
 </main>
 <script defer src="/_vercel/insights/script.js"></script>
 <script defer src="/firebase-config.js"></script>
 <script defer src="/app.js"></script>
 <script defer src="/theme.js"></script>
+<script defer src="/workspace.js"></script>
 <script type="module" src="/ai.js"></script>
 </body>
 </html>
