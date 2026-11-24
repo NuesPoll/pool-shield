@@ -21,7 +21,10 @@ try {
     provider: new ReCaptchaEnterpriseProvider(siteKey),
     isTokenAutoRefreshEnabled: true
   });
-  const ai = getAI(app, { backend: new GoogleAIBackend() });
+  const ai = getAI(app, {
+    backend: new GoogleAIBackend(),
+    useLimitedUseAppCheckTokens: true
+  });
   model = getGenerativeModel(ai, { mode: InferenceMode.PREFER_ON_DEVICE });
 } catch (error) {
   startupError = error;
