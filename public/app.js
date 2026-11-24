@@ -279,7 +279,7 @@ async function refresh(fresh){
   schedule();
 }
 async function run(m){
-  mint=m;clearTimeout(timer);const id=++reqId;
+  mint=m;document.body.classList.remove("scanned");clearTimeout(timer);const id=++reqId;
   document.dispatchEvent(new CustomEvent("pool-shield:scan",{detail:null}));
   out.replaceChildren(el("p",UI[lang].busy,"muted"));
   try{
@@ -287,7 +287,7 @@ async function run(m){
     if(id!==reqId)return;
     if(!r.ok)throw new Error(d.error||"Scan failed");
     last=d;mint=d.mint;$("#mint").value=d.mint;history.replaceState(null,"","?mint="+encodeURIComponent(d.mint)+(SRC?"&src="+encodeURIComponent(SRC):""));render(d);document.dispatchEvent(new CustomEvent("pool-shield:scan",{detail:d}));addRecent(d);schedule();
-  }catch(e){if(id!==reqId)return;last=null;mint="";document.dispatchEvent(new CustomEvent("pool-shield:scan",{detail:null}));out.replaceChildren(el("p",scanError(e),"err"))}
+  }catch(e){if(id!==reqId)return;last=null;mint="";document.body.classList.remove("scanned");document.dispatchEvent(new CustomEvent("pool-shield:scan",{detail:null}));out.replaceChildren(el("p",scanError(e),"err"))}
 }
 function scanError(e){
   const msg=String(e?.message||"");
@@ -316,25 +316,29 @@ async function decodeFrom(src,w0,h0,scales){
   return null;
 }
 function qrMsg(t){$("#qrmsg").textContent=t}
-function qrStop(){clearInterval(qrTimer);qrTimer=null;if(qrStream){qrStream.getTracks().forEach(x=>x.stop());qrStream=null}$("#qrbox").hidden=true}
+let qrEpoch=0;
+function qrStop(){qrEpoch++;$("#qrvideo").srcObject=null;clearInterval(qrTimer);qrTimer=null;if(qrStream){qrStream.getTracks().forEach(x=>x.stop());qrStream=null}$("#qrbox").hidden=true}
 function qrUse(text){
   const a=addrFrom(text);
   if(!a){qrMsg(UI[lang].qrfail);return false}
   qrStop();$("#mint").value=a;history.replaceState(null,"","?mint="+encodeURIComponent(a));run(a);return true;
 }
 async function qrStart(){
+  qrStop();const epoch=qrEpoch;
   const u=UI[lang];
   try{await loadJsQR()}catch(e){}
+  if(epoch!==qrEpoch)return;
   $("#qrbox").hidden=false;qrMsg(u.qrhint);
   try{
-    qrStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});
-    const v=$("#qrvideo");v.srcObject=qrStream;await v.play();
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});
+    if(epoch!==qrEpoch){stream.getTracks().forEach(t=>t.stop());return}qrStream=stream;
+    const v=$("#qrvideo");v.srcObject=qrStream;await v.play();if(epoch!==qrEpoch)return;
     qrTimer=setInterval(async()=>{
       if(qrBusy||!v.videoWidth)return;qrBusy=true;
       const data=await decodeFrom(v,v.videoWidth,v.videoHeight,[960]);
-      qrBusy=false;if(data)qrUse(data);
+      qrBusy=false;if(data&&epoch===qrEpoch)qrUse(data);
     },250);
-  }catch(e){qrMsg(u.qrdenied)}
+  }catch(e){if(epoch===qrEpoch){qrStop();$("#qrbox").hidden=false;qrMsg(u.qrdenied)}}
 }
 async function qrFromFile(f){
   if(!f)return;const u=UI[lang];
