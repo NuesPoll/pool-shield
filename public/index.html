@@ -137,13 +137,29 @@ main{width:100%;overflow-wrap:anywhere}
 .row details,.hrow>*{min-width:0}
 pre{white-space:pre-wrap;overflow-wrap:anywhere}
 @media(max-width:559px){main{padding:20px 14px 40px}.field{flex-basis:100%}.field input{width:100%}.stat{padding:10px}.hrow{flex-wrap:wrap}.shw{margin-left:0}}
+/* v2 foundation: semantic surfaces and system theme. */
+:root{color-scheme:light dark;--tile:#F5F7F4;--surface:#fff;--deep:#17271E;--aqua:#286B48;--action:#286B48;--on-action:#fff;--muted:#52665a;--line:#D4DFD6;--ok:#2E9E6B;--warn:#B87923;--bad:#B93828;--unk:#687970}
+@media(prefers-color-scheme:dark){:root{--tile:#101613;--surface:#18211C;--deep:#EDF5EF;--aqua:#8CDBAC;--action:#8CDBAC;--on-action:#101613;--muted:#A6B6AC;--line:#35463B;--ok:#69C895;--warn:#E3BB73;--bad:#FF9989;--unk:#A6B6AC}}
+:root[data-theme=light]{color-scheme:light;--tile:#F5F7F4;--surface:#fff;--deep:#17271E;--aqua:#286B48;--action:#286B48;--on-action:#fff;--muted:#52665a;--line:#D4DFD6;--ok:#2E9E6B;--warn:#B87923;--bad:#B93828;--unk:#687970}
+:root[data-theme=dark]{color-scheme:dark;--tile:#101613;--surface:#18211C;--deep:#EDF5EF;--aqua:#8CDBAC;--action:#8CDBAC;--on-action:#101613;--muted:#A6B6AC;--line:#35463B;--ok:#69C895;--warn:#E3BB73;--bad:#FF9989;--unk:#A6B6AC}
+body{background:var(--tile)}main{max-width:980px;padding-top:24px}
+button{background:var(--action);color:var(--on-action)}button:hover{background:var(--action);filter:brightness(.94)}
+.top button[aria-pressed=true],.mini[aria-pressed=true]{background:var(--action);color:var(--on-action)}
+.top button,.mini,.chip,.alt,.icon,.btn.ghost,.live,.menu,.qrin,input,.strip,.vcard,.know,.rows,.tiles div,.stat,.hcard,.trust span,details p{background:var(--surface);color:var(--deep);border-color:var(--line);box-shadow:none}
+.meta,.tip,summary span,.stampline,.muted,footer,.tiles p,.stat .k,.eyebrow,.hn{color:var(--muted)}
+.icon:hover,.btn.ghost:hover,.alt:hover{background:var(--action);color:var(--on-action)}
+.badge,.hk{color:#101613;background:#a6b6ac}.badge.ok{background:#8cdbac}.badge.warn{background:#e3bb73}.badge.bad{background:#ff9989}.hk.pool,.hk.program{background:#8cdbac}
+.pad{animation:none}.live.on .dot{animation:none}
+.vcard{border-left-width:5px}.brand h1{font-size:2rem}.tagline{color:var(--muted);margin:0 0 14px;font-weight:600}
+#theme-choice{font:inherit;color:var(--deep);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px;max-width:110px}
+.top{flex-wrap:wrap}
 </style>
 </head>
 <body>
 <main>
-<div class="top" role="group" aria-label="Language"><button id="en" type="button">English</button><button id="pcm" type="button">Pidgin</button></div>
+<div class="top" role="group" aria-label="Display preferences"><select id="theme-choice" aria-label="Color theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select><button id="en" type="button">English</button><button id="pcm" type="button">Pidgin</button></div>
 <div class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg><h1>Pool Shield</h1></div>
-<p class="lead" id="lead"></p>
+<p class="tagline">Beyond the scan.</p><p class="lead" id="lead"></p>
 <div class="trust"><span id="t1"></span><span id="t2"></span><span id="t3"></span></div>
 <form id="f">
 <div class="field"><input id="mint" autocomplete="off" spellcheck="false" aria-label="Solana token address"><button type="button" id="qrup" class="icon"></button><button type="button" id="qr" class="icon"></button></div>
@@ -169,6 +185,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere}
 <script defer src="/_vercel/insights/script.js"></script>
 <script defer src="/firebase-config.js"></script>
 <script defer src="/app.js"></script>
+<script defer src="/theme.js"></script>
 <script type="module" src="/ai.js"></script>
 </body>
 </html>
