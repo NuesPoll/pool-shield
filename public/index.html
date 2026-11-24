@@ -175,6 +175,7 @@ button{background:var(--action);color:var(--on-action)}button:hover{background:v
 #learn-panel article p{margin:0;color:var(--muted)}
 @media(max-width:760px){.workspace-nav{inset:auto 0 0;width:100%;flex-direction:row;justify-content:space-around;border-right:0;border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom));gap:4px}.workspace-nav .nav-brand{display:none}.workspace-nav button{flex:1;flex-direction:column;gap:3px;font-size:.78rem;min-height:48px;justify-content:center;padding:6px}.workspace main{margin:0 auto;width:100%;padding:18px 16px 110px}.workspace .top{justify-content:flex-end}}
 .holder-chart{display:grid;gap:8px;margin:12px 0 20px}.holder-line{display:grid;grid-template-columns:30px minmax(0,1fr) 70px;align-items:center;gap:8px;font-size:.85rem;font-variant-numeric:tabular-nums}.holder-track{min-width:0}.holder-track progress{display:block;width:100%;height:10px;accent-color:var(--aqua)}.holder-line span:last-child{text-align:right}.workspace .vcard h2{font-size:clamp(1.3rem,3vw,1.9rem)}
+#demo-toggle{margin-top:14px}#demo-panel fieldset{border:1px solid var(--line);border-radius:8px;padding:12px}#demo-panel details{border-top:1px solid var(--line)}#demo-panel summary{font-weight:600}
 </style>
 </head>
 <body class="workspace">
@@ -197,6 +198,17 @@ button{background:var(--action);color:var(--on-action)}button:hover{background:v
 <div id="qrbox" class="qrbox" hidden><div class="qrin"><video id="qrvideo" playsinline muted></video><p id="qrmsg"></p><button type="button" id="qrphoto" class="btn ghost"></button> <button type="button" id="qrclose" class="btn ghost"></button></div></div>
 
 <div id="examples" class="recent"></div>
+<button type="button" id="demo-toggle" class="btn ghost" aria-expanded="false" aria-controls="demo-panel" data-copy="demoOpen">Try a fictional demo</button>
+<section id="demo-panel" class="hcard" hidden aria-labelledby="demo-heading">
+<h2 id="demo-heading" data-copy="demoTitle">Practice report — fictional data</h2>
+<p class="tip" data-copy="demoNote">This is not a real token or live scan. No AI or blockchain request is needed.</p>
+<p data-copy="demoSummary">Two concerns are visible and one finding is unknown. Missing evidence is not evidence of safety.</p>
+<details><summary data-copy="demoMint">Concern: more tokens can be created</summary><p data-copy="mintText"></p></details>
+<details><summary data-copy="demoFreeze">Observed: freeze authority disabled</summary><p data-copy="demoFreezeText">The example has no active freeze authority. This finding alone does not establish safety.</p></details>
+<details><summary data-copy="demoHolder">Concern: concentrated ownership</summary><p data-copy="holderText"></p></details>
+<details><summary data-copy="demoLiquidity">Unknown: liquidity protection</summary><p data-copy="liquidityText"></p></details>
+<fieldset><legend data-copy="demoQuestion">Does unknown liquidity protection mean the token is safe?</legend><button type="button" class="mini" data-demo-answer="yes" data-copy="yes">Yes</button> <button type="button" class="mini" data-demo-answer="no" data-copy="no">No</button><p id="demo-feedback" role="status"></p></fieldset>
+</section>
 <div id="qrout" class="qrbox" hidden><div class="qrin"><div id="qrcv"></div><p id="qrcap"></p><div class="ctl" style="justify-content:center"><button type="button" id="qrt1" class="mini"></button><button type="button" id="qrt2" class="mini"></button><button type="button" id="qrdl" class="btn"></button><button type="button" id="qrx" class="btn ghost"></button></div></div></div>
 <div id="out" aria-live="polite"></div>
 <section id="ai-panel" class="hcard" hidden aria-labelledby="ai-heading">
