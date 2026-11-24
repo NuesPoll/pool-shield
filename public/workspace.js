@@ -18,7 +18,11 @@ document.documentElement.lang=p?"pcm":"en";
 document.querySelectorAll("[data-copy]").forEach(el=>{el.textContent=copy[p?"pcm":"en"][el.dataset.copy]});
 demoText();
 const select=document.getElementById("theme-choice");
-["System","Light","Dark"].forEach((v,i)=>select.options[i].textContent=p?["Device","Light","Dark"][i]:v);
+["System","Light","Dark"].forEach((v,i)=>select.options[i].textContent=p?["Follow device","Light","Dark"][i]:v);
+select.setAttribute("aria-label",p?"Choose how screen go look":"Color theme");
+document.querySelector(".workspace-nav").setAttribute("aria-label",p?"Main menu":"Main navigation");
+document.querySelector(".top").setAttribute("aria-label",p?"Screen and language settings":"Display preferences");
+document.getElementById("scanner-panel").setAttribute("aria-label",copy[p?"pcm":"en"].scanner);
 }
 function show(view){
 if(!views.includes(view))return;
