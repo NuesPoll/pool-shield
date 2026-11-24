@@ -1,0 +1,8 @@
+rpc.txt
+.env
+.env.*
+!.env.example
+node_modules/
+.vercel/
+*.log
+coverage/
