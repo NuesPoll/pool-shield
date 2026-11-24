@@ -129,6 +129,14 @@ button:active{transform:translateY(1px)}
 .hk{padding:1px 8px;border-radius:999px;font-size:.75rem;font-weight:700;color:#fff;background:var(--deep)}
 .hk.pool,.hk.program{background:var(--aqua)}.hk.burn{background:var(--unk)}
 .hrow a{color:var(--aqua);margin-left:auto;font-family:ui-monospace,Consolas,monospace;font-size:.85rem}
+/* Keep intrinsic widths from expanding the mobile viewport. */
+main,#out,.field,.field input,details,.stat,.hcard,.vcard,.know,.rows{min-width:0;max-width:100%}
+main{width:100%;overflow-wrap:anywhere}
+.stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(min-width:560px){.stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.row details,.hrow>*{min-width:0}
+pre{white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:559px){main{padding:20px 14px 40px}.field{flex-basis:100%}.field input{width:100%}.stat{padding:10px}.hrow{flex-wrap:wrap}.shw{margin-left:0}}
 </style>
 </head>
 <body>
