@@ -238,9 +238,16 @@ async function run(m){
     if(id!==reqId)return;
     if(!r.ok)throw new Error(d.error||"Scan failed");
     last=d;mint=d.mint;$("#mint").value=d.mint;history.replaceState(null,"","?mint="+encodeURIComponent(d.mint)+(SRC?"&src="+encodeURIComponent(SRC):""));render(d);document.dispatchEvent(new CustomEvent("pool-shield:scan",{detail:d}));addRecent(d);schedule();
-  }catch(e){if(id!==reqId)return;last=null;mint="";document.dispatchEvent(new CustomEvent("pool-shield:scan",{detail:null}));out.replaceChildren(el("p",e.message,"err"))}
+  }catch(e){if(id!==reqId)return;last=null;mint="";document.dispatchEvent(new CustomEvent("pool-shield:scan",{detail:null}));out.replaceChildren(el("p",scanError(e),"err"))}
 }
-function setLang(l){lang=l;try{localStorage.setItem("lang",l)}catch(e){}chrome();if(last)render(last)}
+function scanError(e){
+  const msg=String(e?.message||"");
+  const p=lang==="pcm";
+  if(!navigator.onLine||/failed to fetch|network error/i.test(msg))return p?"Internet no dey. Connect again and try.":"Network connection unavailable. Reconnect and try again.";
+  if(/not a token mint|invalid.*address|invalid.*mint/i.test(msg))return p?"This token address no correct. Enter correct Solana token address or link.":"Invalid token address. Enter a valid Solana token address or link.";
+  return p?"We no fit finish this check. Try again later.":"Unable to complete this scan. Try again later.";
+}
+function setLang(l){lang=l;try{localStorage.setItem("lang",l)}catch(e){}chrome();if(last)render(last);document.dispatchEvent(new CustomEvent("pool-shield:language"))}
 $("#en").addEventListener("click",()=>setLang("en"));$("#pcm").addEventListener("click",()=>setLang("pcm"));
 $("#f").addEventListener("submit",e=>{e.preventDefault();const m=$("#mint").value.trim();if(m){history.replaceState(null,"","?mint="+encodeURIComponent(m));run(m)}});
 document.addEventListener("visibilitychange",()=>{if(document.hidden)clearTimeout(timer);else if(live&&mint)refresh(false)});
