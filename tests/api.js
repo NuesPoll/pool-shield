@@ -25,5 +25,20 @@ async function request(method, query, ip = "127.0.0.1") {
   r=await request("GET",{mint:"notmint"}); assert.equal(r.code,400);
   for(let i=0;i<120;i++) assert.equal((await request("GET",{mint:"example"},"127.0.0.2")).code,200);
   r=await request("GET",{mint:"example"},"127.0.0.2"); assert.equal(r.code,429); assert.equal(r.headers["Retry-After"],"60");
+  process.env.UPSTASH_REDIS_REST_URL="https://redis.example.invalid";
+  process.env.UPSTASH_REDIS_REST_TOKEN="mock-only";
+  global.fetch=async (url,options)=>{
+    assert.equal(url,process.env.UPSTASH_REDIS_REST_URL);
+    assert.equal(options.redirect,"error");
+    assert.equal(JSON.parse(options.body)[0],"EVAL");
+    return {ok:true,json:async()=>({result:121})};
+  };
+  r=await request("GET",{mint:"example"},"127.0.0.3"); assert.equal(r.code,429);
+  global.fetch=async()=>({ok:true,json:async()=>({result:1})});
+  r=await request("GET",{mint:"example"},"127.0.0.4"); assert.equal(r.code,200);
+  global.fetch=async()=>{throw new Error("private redis diagnostic");};
+  r=await request("GET",{mint:"example"},"127.0.0.5"); assert.equal(r.code,503); assert.ok(!JSON.stringify(r.body).includes("private redis diagnostic"));
+  delete process.env.UPSTASH_REDIS_REST_URL;
+  delete process.env.UPSTASH_REDIS_REST_TOKEN;
   console.log("API regression checks passed");
 })().catch(e=>{console.error(e);process.exitCode=1;});
