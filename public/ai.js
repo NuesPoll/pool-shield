@@ -14,6 +14,21 @@ function localizePanel() {
   panel.querySelector("p").textContent = tr("Optional explanation of scan evidence. AI cannot verify token safety or liquidity locks.", "AI fit explain wetin scan find. E no fit confirm say token safe or liquidity lock.");
   button.textContent = tr("Explain this scan with AI", "Use AI explain this check");
 }
+const help=document.getElementById("evidence-help");
+const helpOptions=document.getElementById("evidence-help-options");
+const helpAnswer=document.getElementById("evidence-help-answer");
+let used=new Set();
+function renderHelp(){
+  help.hidden=!scan;
+  document.getElementById("evidence-help-title").textContent=tr("Explore the evidence","Understand wetin scan find");
+  document.getElementById("evidence-help-note").textContent=tr("Choose up to two explanations from the scanner. These are not AI-generated and use no cloud quota.","Choose up to two explanations from scan. No be AI generate am; e no use cloud quota.");
+  helpOptions.replaceChildren();
+  if(!scan)return;
+  for(const c of (scan.checks||[])){
+    const b=document.createElement("button");b.type="button";b.className="chip";b.textContent=tr(c.label,c.labelPcm);b.disabled=used.size>=2&&!used.has(c.id);
+    b.addEventListener("click",()=>{if(used.size>=2&&!used.has(c.id))return;used.add(c.id);helpAnswer.textContent=tr(c.why,c.whyPcm)||tr("No explanation available.","Explanation no dey.");renderHelp()});helpOptions.append(b);
+  }
+}
 let scan = null;
 let busy = false;
 let model = null;
@@ -43,6 +58,7 @@ function updateScan(event) {
   scanVersion++;
   completed = false;
   scan = event.detail || null;
+  used=new Set();helpAnswer.textContent="";renderHelp();
   panel.hidden = !scan;
   answer.textContent = "";
   source.textContent = "";
@@ -50,7 +66,7 @@ function updateScan(event) {
   button.disabled = !scan || busy || completed;
 }
 document.addEventListener("pool-shield:scan", updateScan);
-document.addEventListener("pool-shield:language", () => updateScan({detail: scan}));
+document.addEventListener("pool-shield:language", () => {localizePanel();helpAnswer.textContent="";renderHelp();scanVersion++;answer.textContent="";source.textContent="";status.textContent=tr("Explanation language changed. Start a fresh scan for a new AI explanation.","Language don change. Check token afresh for new AI explanation.");});
 localizePanel();
 function evidence(data) {
   return {
