@@ -10,4 +10,4 @@ window.POOL_SHIELD_FIREBASE_CONFIG = Object.freeze({
   measurementId: "G-9HTW2Z6GLF"
 });
 // Public Fraud Defense (reCAPTCHA Enterprise) site key, not an admin secret.
-window.POOL_SHIELD_APP_CHECK_SITE_KEY = "6Lem7C4uAAAAAP-136M-m-ypauJHaarhoG6By2mQ";
+window.POOL_SHIELD_APP_CHECK_SITE_KEY = "6Le31C8uAAAAADoZYZ6OmLa95htwBzqkpu5z_kdt";
