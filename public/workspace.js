@@ -26,6 +26,7 @@ document.getElementById("scanner-panel").setAttribute("aria-label",copy[p?"pcm":
 }
 function show(view){
 if(!views.includes(view))return;
+if(view!=="scanner"){document.getElementById("qrclose").click();document.getElementById("qrout").hidden=true;}
 views.forEach(v=>{document.getElementById(v+"-panel").hidden=v!==view});
 document.querySelectorAll("[data-view]").forEach(b=>{if(b.dataset.view===view)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
 window.scrollTo(0,0);
