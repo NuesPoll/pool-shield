@@ -244,15 +244,22 @@ function render(d){
   if(flags.length){const ul=el("ul");flags.forEach(c=>{const li=el("li");li.append(el("b",p?c.labelPcm:c.label),document.createTextNode(": "+(p?c.detailPcm:c.detail)));ul.append(li)});know.append(ul)}
   else know.append(el("p",u.noflags));
   const hc=el("section",null,"hcard");hc.append(el("h3",u.hold));
-  const hs=(d.holders||[]).filter(x=>x.owner);
+  const hs=(d.holders||[]).filter(x=>x.owner).slice(0,10);
   if(hs.length){
     const kl={wallet:u.hw,pool:u.hp,program:u.hg,burn:u.hb};
     const chart=el("div",null,"holder-chart");
     chart.setAttribute("aria-label",p?"Percentage of supply wey each account hold":"Percentage of supply held by each account");
     hs.forEach((x,n)=>{if(!Number.isFinite(x.pct)||x.pct<0||x.pct>100)return;const line=el("div",null,"holder-line"),track=el("div",null,"holder-track"),bar=document.createElement("progress");bar.max=100;bar.value=x.pct;bar.setAttribute("aria-label","#"+(n+1));track.append(bar);line.append(el("span","#"+(n+1)),track,el("span",x.pct.toFixed(2)+"%"));chart.append(line)});
     if(chart.children.length)hc.append(chart);
-    hs.forEach((x,n)=>{const r=el("div",null,"hrow");r.append(el("span",String(n+1),"hn"),el("span",kl[x.kind]||x.kind,"hk "+x.kind),el("b",x.pct==null?amt(x.amount):x.pct.toFixed(2)+"%","hv"));
-      const l=el("a",x.owner.slice(0,4)+"..."+x.owner.slice(-4));l.href="https://solscan.io/account/"+x.owner;l.target="_blank";l.rel="noopener noreferrer";r.append(l);hc.append(r)});
+    const table=el("table",null,"holder-table"),thead=el("thead"),headRow=el("tr"),tbody=el("tbody");
+    table.setAttribute("aria-label",u.hold);
+    ["#",p?"Account":"Account",p?"Type":"Type",p?"Share of supply":"Supply share"].forEach(label=>{const th=el("th",label);th.scope="col";headRow.append(th)});
+    thead.append(headRow);
+    hs.slice(0,10).forEach((x,n)=>{const r=el("tr"),rank=el("th",String(n+1));rank.scope="row";
+      const account=el("td"),l=el("a",x.owner.slice(0,4)+"…"+x.owner.slice(-4));l.href="https://solscan.io/account/"+encodeURIComponent(x.owner);l.title=x.owner;l.setAttribute("aria-label",x.owner);l.target="_blank";l.rel="noopener noreferrer";account.append(l);
+      const kind=el("td",kl[x.kind]||x.kind),share=el("td",Number.isFinite(x.pct)?x.pct.toFixed(2)+"%":u.nr);
+      r.append(rank,account,kind,share);tbody.append(r)});
+    table.append(thead,tbody);hc.append(table);
     hc.append(el("p",u.hnote,"tip"));
   }else hc.append(el("p",u.hnone,"tip"));
   const limitations=el("p",p?"Lower score mean fewer risk signs, no be guarantee of safety. Missing evidence no mean say everything dey okay.":"A lower score means fewer observed risk indicators, not guaranteed safety. Missing evidence is not a clean result.","tip");
