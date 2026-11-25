@@ -20,6 +20,7 @@ jobs:
         run: node tests/api.js
       - run: node tests/ai-quota.js
       - run: node tests/ai-evidence.js
+      - run: node tests/ai-gateway.js
       - name: Server JavaScript syntax
         run: |
           node --check server.js
