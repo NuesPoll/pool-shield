@@ -34,6 +34,7 @@ let busy = false;
 let model = null;
 let scanVersion = 0;
 let completed = false;
+let explanationLanguage = null;
 let startupError = null;
 const config = window.POOL_SHIELD_FIREBASE_CONFIG;
 const siteKey = window.POOL_SHIELD_APP_CHECK_SITE_KEY;
@@ -57,6 +58,7 @@ function updateScan(event) {
   localizePanel();
   scanVersion++;
   completed = false;
+  explanationLanguage = null;
   scan = event.detail || null;
   used=new Set();helpAnswer.textContent="";renderHelp();
   panel.hidden = !scan;
@@ -66,7 +68,13 @@ function updateScan(event) {
   button.disabled = !scan || busy || completed;
 }
 document.addEventListener("pool-shield:scan", updateScan);
-document.addEventListener("pool-shield:language", () => {localizePanel();helpAnswer.textContent="";renderHelp();scanVersion++;answer.textContent="";source.textContent="";status.textContent=tr("Explanation language changed. Start a fresh scan for a new AI explanation.","Language don change. Check token afresh for new AI explanation.");});
+function explanationStatus(){
+  if(!scan)return;
+  if(completed && explanationLanguage !== (isPidgin()?"pcm":"en")){
+    status.textContent=tr("Explanation retained in its original language. Start a fresh scan to request another language.","Explanation still dey for the first language. Check afresh to use another language.");
+  }else if(completed){status.textContent=tr("AI explanation is not a security guarantee.","AI explanation no mean say token safe.");}
+}
+document.addEventListener("pool-shield:language", () => {localizePanel();helpAnswer.textContent="";renderHelp();explanationStatus();});
 localizePanel();
 function evidence(data) {
   return {
@@ -93,6 +101,8 @@ button.addEventListener("click", async () => {
   source.textContent = "";
   status.textContent = tr("Preparing explanation…", "We dey prepare explanation…");
   const version = scanVersion;
+  const requestedLanguage = isPidgin()?"pcm":"en";
+  const evidenceTime = scan.scannedAt;
   let generating = true;
   try {
     status.textContent = tr("Generating security explanation…", "We dey explain the risk…");
@@ -127,10 +137,12 @@ button.addEventListener("click", async () => {
       }
     }
     completed = true;
+    explanationLanguage = requestedLanguage;
     const inferenceSource = result.response.inferenceSource;
     source.textContent = inferenceSource === "ON_DEVICE" ? tr("Generated on this device", "AI work for this device") :
       inferenceSource === "IN_CLOUD" ? tr("Generated in cloud", "AI work for cloud") : "";
-    status.textContent = tr("AI explanation is not a security guarantee.", "AI explanation no mean say token safe.");
+    source.textContent = [source.textContent, evidenceTime ? tr("Evidence timestamp: ","Time we check: ")+evidenceTime : ""].filter(Boolean).join(" · ");
+    explanationStatus();
   } catch (error) {
     if (version === scanVersion) {
       const message = String(error?.message || "Please retry.");
