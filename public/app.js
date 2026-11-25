@@ -197,9 +197,9 @@ function printReport(data,full){
   add("p",t("Sources: public Solana RPC; market and lock information may come from Dexscreener and RugCheck. Third-party lock claims are not independently verified. This is a snapshot, not a live report.","Sources: public Solana RPC; market and lock information fit come from Dexscreener and RugCheck. We no independently confirm lock claims. Na saved report, no be live check."));
   document.querySelector(".print-report")?.remove();
   document.body.append(report);
-  const cleanup=()=>report.remove();
+  const cleanup=()=>{report.remove();window.removeEventListener("afterprint",cleanup)};
   window.addEventListener("afterprint",cleanup,{once:true});
-  try{window.print()}finally{cleanup();window.removeEventListener("afterprint",cleanup)}
+  try{window.print()}catch(e){cleanup();throw e}
 }
 
 function render(d){
@@ -222,7 +222,7 @@ function render(d){
   const st=el("span",null,"stampline");st.id="stamp";
   const sb=el("button",null,"btn ghost");sb.type="button";sb.innerHTML=ICON.share;sb.append(document.createTextNode(u.share));
   const menu=el("div",null,"menu");menu.hidden=true;
-  [[u.copy,copyLink],[u.wa,whatsapp],[u.img,saveImage],[u.qrshow,showQr],[p?"Save summary PDF":"Save summary PDF",()=>printReport(d,false)],[p?"Save full report PDF":"Save technical PDF",()=>printReport(d,true)]].forEach(([t,f])=>{const m=el("button",t,"mi");m.type="button";m.onclick=()=>{menu.hidden=true;f(m)};menu.append(m)});
+  [[u.copy,copyLink],[u.wa,whatsapp],[u.img,saveImage],[u.qrshow,showQr],[p?"Save short report PDF":"Save summary PDF",()=>printReport(d,false)],[p?"Save full report PDF":"Save technical PDF",()=>printReport(d,true)]].forEach(([t,f])=>{const m=el("button",t,"mi");m.type="button";m.onclick=()=>{menu.hidden=true;f(m)};menu.append(m)});
   sb.onclick=e=>{e.stopPropagation();menu.hidden=!menu.hidden};
   const shw=el("div",null,"shw");shw.append(sb,menu);
   const dq=el("button",null,"btn ghost");dq.type="button";dq.innerHTML=ICON.qr;dq.append(document.createTextNode(u.qrdl));dq.onclick=quickQr;
