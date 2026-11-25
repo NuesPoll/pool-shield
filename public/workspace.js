@@ -37,5 +37,24 @@ function empty(){document.getElementById("history-empty").hidden=recent.children
 new MutationObserver(empty).observe(recent,{childList:true});
 recent.addEventListener("click",e=>{if(e.target.closest(".chip"))show("scanner")});
 document.addEventListener("pool-shield:language",translate);
+const help=document.getElementById("evidence-help");
+const helpOptions=document.getElementById("evidence-help-options");
+const helpAnswer=document.getElementById("evidence-help-answer");
+let used=new Set(),scan=null;
+const tr=(en,pcm)=>document.getElementById('pcm').getAttribute('aria-pressed')==='true'?pcm:en;
+function renderHelp(){
+  help.hidden=!scan;
+  document.getElementById("evidence-help-title").textContent=tr("Explore the evidence","Understand wetin scan find");
+  document.getElementById("evidence-help-note").textContent=tr("Choose up to two explanations from the scanner. These are not AI-generated and use no cloud quota.","Choose up to two explanations from scan. No be AI generate am; e no use cloud quota.");
+  helpOptions.replaceChildren();
+  if(!scan)return;
+  for(const c of (scan.checks||[])){
+    const b=document.createElement("button");b.type="button";b.className="chip";b.textContent=tr(c.label,c.labelPcm);b.disabled=used.size>=2&&!used.has(c.id);
+    b.addEventListener("click",()=>{if(used.size>=2&&!used.has(c.id))return;used.add(c.id);helpAnswer.textContent=tr(c.why,c.whyPcm)||tr("No explanation available.","Explanation no dey.");renderHelp()});helpOptions.append(b);
+  }
+}
+
+document.addEventListener("pool-shield:scan",e=>{scan=e.detail||null;used=new Set();helpAnswer.textContent="";renderHelp();});
+document.addEventListener("pool-shield:language",()=>{helpAnswer.textContent="";renderHelp();});
 translate();empty();
 })();
