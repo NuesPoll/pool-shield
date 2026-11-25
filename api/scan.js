@@ -59,6 +59,14 @@ module.exports = async (req, res) => {
       return res.status(429).json({ error: "Too many scans from this connection. Wait a minute and try again." });
     }
     const out = await scan(q.mint.trim(), { fresh: q.fresh === "1", quiet: q.live === "1", src: typeof q.src === "string" ? q.src.replace(/[^a-z0-9_-]/gi, "").slice(0, 20) : "" });
+    if(process.env.AI_FOLLOWUPS_ENABLED==="true" && q.live!=="1"){
+      try{
+        const reportId=await require("../lib/ai-evidence").save(out);
+        return res.status(200).json({...out,reportId});
+      }catch{
+        console.warn(JSON.stringify({event:"ai_evidence_unavailable"}));
+      }
+    }
     return res.status(200).json(out);
   } catch (e) {
     if (e.code === "NOT_MINT" || /not a token mint/i.test(String(e.message))) return res.status(400).json({ error: "This address is not a token mint. Paste the token address, or a link to the token." });
