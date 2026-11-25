@@ -18,6 +18,7 @@ jobs:
         run: npm test
       - name: API regression tests
         run: node tests/api.js
+      - run: node tests/ai-quota.js
       - name: Server JavaScript syntax
         run: |
           node --check server.js
