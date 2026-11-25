@@ -269,17 +269,17 @@ function render(d){
 }
 function schedule(){clearTimeout(timer);if(live&&mint&&!document.hidden)timer=setTimeout(()=>refresh(false),20000)}
 async function refresh(fresh){
-  if(!mint)return;
+  if(!mint||!last)return;
   const id=++reqId;
   try{
     const r=await fetch("/api/scan?mint="+encodeURIComponent(mint)+"&live=1"+(fresh?"&fresh=1":""),{cache:"no-store"});
     const d=await r.json();if(id!==reqId)return;
     if(r.ok){last=d;render(d)}
   }catch(e){}
-  schedule();
+  if(id===reqId)schedule();
 }
 async function run(m){
-  mint=m;document.body.classList.remove("scanned");clearTimeout(timer);const id=++reqId;
+  last=null;mint=m;document.body.classList.remove("scanned");clearTimeout(timer);const id=++reqId;
   document.dispatchEvent(new CustomEvent("pool-shield:scan",{detail:null}));
   out.replaceChildren(el("p",UI[lang].busy,"muted"));
   try{
