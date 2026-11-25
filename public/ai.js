@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
-import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app-check.js";
+import { initializeAppCheck, ReCaptchaEnterpriseProvider, getLimitedUseToken } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app-check.js";
 import { getAI, GoogleAIBackend, getGenerativeModel, InferenceMode } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-ai.js";
 
 const panel = document.getElementById("ai-panel");
@@ -17,6 +17,7 @@ function localizePanel() {
 let scan = null;
 let busy = false;
 let model = null;
+let appCheck = null;
 let scanVersion = 0;
 let completed = false;
 let explanationLanguage = null;
@@ -26,7 +27,7 @@ const siteKey = window.POOL_SHIELD_APP_CHECK_SITE_KEY;
 try {
   if (!config?.appId || !siteKey) throw new Error("Firebase configuration or App Check site key is missing.");
   const app = initializeApp(config);
-  initializeAppCheck(app, {
+  appCheck = initializeAppCheck(app, {
     provider: new ReCaptchaEnterpriseProvider(siteKey),
     isTokenAutoRefreshEnabled: true
   });
@@ -138,3 +139,37 @@ button.addEventListener("click", async () => {
     button.disabled = !scan || completed;
   }
 });
+
+const follow=document.getElementById("ai-followups");
+const followOptions=document.getElementById("follow-options");
+const followStatus=document.getElementById("follow-status");
+const followAnswer=document.getElementById("follow-answer");
+let followBusy=false,followCount=0;
+function followRender(){
+ follow.hidden=!scan?.reportId||!appCheck;
+ document.getElementById("follow-title").textContent=tr("Ask about the evidence","Ask about wetin scan find");
+ document.getElementById("follow-note").textContent=tr("Optional cloud AI. Up to two requests per report; reports expire after 15 minutes.","Optional cloud AI. Two requests per report; report expire after 15 minutes.");
+ followOptions.replaceChildren();
+ for(const [topic,en,pcm] of [["risk","Explain the risks","Explain risk signs"],["limitations","What is unknown?","Wetin we no know?"],["verification","What can be verified?","Wetin we fit confirm?"]]){
+  const b=document.createElement("button");b.type="button";b.className="chip";b.textContent=tr(en,pcm);b.disabled=followBusy||followCount>=2;
+  b.onclick=async()=>{
+   if(followBusy||followCount>=2||!scan?.reportId||!appCheck)return;
+   const id=scan.reportId,version=scanVersion,language=isPidgin()?"pcm":"en";
+   followBusy=true;followRender();followStatus.textContent=tr("Requesting explanation…","We dey request explanation…");
+   try{
+    const token=await getLimitedUseToken(appCheck);
+    if(version!==scanVersion)return;
+    const r=await fetch("/api/ai-followup",{method:"POST",headers:{"Content-Type":"application/json","X-Firebase-AppCheck":token.token},body:JSON.stringify({reportId:id,topic,language})});
+    const d=await r.json();if(version!==scanVersion)return;
+    if(r.status===429){followCount=2;followStatus.textContent=tr("Request limit reached.","Request limit don reach.");return}
+    if(r.status===404){followCount=2;followStatus.textContent=tr("Report expired. Run a fresh scan.","Report don expire. Check afresh.");return}
+    if(!r.ok||typeof d.answer!=="string")throw Error("Unavailable");
+    followCount++;const p=document.createElement("p");p.textContent=d.answer;followAnswer.append(p);followStatus.textContent="";
+   }catch{if(version===scanVersion)followStatus.textContent=tr("Follow-up unavailable. Try again later.","Follow-up no dey available now.")}
+   finally{followBusy=false;followRender()}
+  };followOptions.append(b);
+ }
+}
+document.addEventListener("pool-shield:scan",()=>{followCount=0;followAnswer.replaceChildren();followStatus.textContent="";followRender()});
+document.addEventListener("pool-shield:language",followRender);
+followRender();
