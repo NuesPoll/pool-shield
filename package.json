@@ -10,6 +10,8 @@
     "node": ">=18"
   },
   "dependencies": {
-    "firebase-admin": "^13.0.0"
+    "firebase-admin": "^13.0.0",
+    "@vercel/oidc": "^3.0.0",
+    "google-auth-library": "^10.0.0"
   }
 }
